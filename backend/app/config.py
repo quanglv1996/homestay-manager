@@ -1,7 +1,8 @@
 import os
+import json
 from typing import List
 from pydantic_settings import BaseSettings
-from pydantic import AnyHttpUrl, validator
+from pydantic import AnyHttpUrl, field_validator
 
 
 class Settings(BaseSettings):
@@ -23,10 +24,16 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: List[str] = []
     
-    @validator("CORS_ORIGINS", pre=True)
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
     def assemble_cors_origins(cls, v):
         if isinstance(v, str):
-            return [i.strip() for i in v.split(",")]
+            # Try to parse as JSON first
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                # Fall back to comma-separated
+                return [i.strip() for i in v.split(",")]
         return v
     
     # Admin User

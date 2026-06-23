@@ -5,9 +5,30 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 from app.config import settings
 from app.api.v1.api import api_router
 import os
+
+
+class CORSPreflightMiddleware(BaseHTTPMiddleware):
+    """Handle CORS preflight requests"""
+    async def dispatch(self, request: Request, call_next):
+        if request.method == "OPTIONS":
+            return JSONResponse(
+                content={},
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+                    "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin, X-Requested-With",
+                    "Access-Control-Allow-Credentials": "true",
+                    "Access-Control-Max-Age": "3600",
+                },
+            )
+        response = await call_next(request)
+        return response
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -17,13 +38,17 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+# Add custom CORS preflight middleware FIRST
+app.add_middleware(CORSPreflightMiddleware)
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS if settings.CORS_ORIGINS else ["*"],
+    allow_origins=["*"],  # Allow all origins for development
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Create uploads directory if it doesn't exist

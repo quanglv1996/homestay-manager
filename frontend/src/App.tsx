@@ -3,6 +3,10 @@ import { Box } from '@mui/material'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Properties from './pages/Properties'
+import Rooms from './pages/Rooms'
+import Tenants from './pages/Tenants'
+import Contracts from './pages/Contracts'
+import Invoices from './pages/Invoices'
 import Layout from './components/Layout'
 import { useAuthStore } from './stores/authStore'
 
@@ -33,6 +37,38 @@ function App() {
           element={
             <ProtectedRoute>
               <Properties />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rooms"
+          element={
+            <ProtectedRoute>
+              <Rooms />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tenants"
+          element={
+            <ProtectedRoute>
+              <Tenants />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/contracts"
+          element={
+            <ProtectedRoute>
+              <Contracts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/invoices"
+          element={
+            <ProtectedRoute>
+              <Invoices />
             </ProtectedRoute>
           }
         />

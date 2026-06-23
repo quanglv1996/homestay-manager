@@ -13,7 +13,9 @@ from app.api.v1.endpoints import (
     expenses,
     notifications,
     dashboard,
-    reports
+    reports,
+    audit_logs,
+    upload
 )
 
 api_router = APIRouter()
@@ -28,6 +30,8 @@ api_router.include_router(invoices.router, prefix="/invoices", tags=["Invoices"]
 api_router.include_router(meter_readings.router, prefix="/meter-readings", tags=["Meter Readings"])
 api_router.include_router(maintenance.router, prefix="/maintenance", tags=["Maintenance"])
 api_router.include_router(expenses.router, prefix="/expenses", tags=["Expenses"])
+api_router.include_router(audit_logs.router, prefix="", tags=["Audit Logs"])
+api_router.include_router(upload.router, prefix="", tags=["File Upload"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
 api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])

@@ -10,7 +10,6 @@ import {
 import {
   Home as HomeIcon,
   People as PeopleIcon,
-  AttachMoney as MoneyIcon,
   Assignment as ContractIcon,
 } from '@mui/icons-material'
 import api from '../lib/api'

@@ -24,7 +24,7 @@ def seed_users(db: Session):
         email=os.getenv("ADMIN_EMAIL", "admin@homestay.com"),
         full_name=os.getenv("ADMIN_FULL_NAME", "System Administrator"),
         hashed_password=get_password_hash(os.getenv("ADMIN_PASSWORD", "Admin@123456")),
-        role=UserRole.ADMIN,
+        role="ADMIN",
         is_active=True,
         phone="0901234567"
     )
@@ -35,7 +35,7 @@ def seed_users(db: Session):
         email="manager@homestay.com",
         full_name="Property Manager",
         hashed_password=get_password_hash("Manager@123"),
-        role=UserRole.MANAGER,
+        role="MANAGER",
         is_active=True,
         phone="0901234568"
     )
@@ -46,7 +46,7 @@ def seed_users(db: Session):
         email="staff@homestay.com",
         full_name="Staff Member",
         hashed_password=get_password_hash("Staff@123"),
-        role=UserRole.STAFF,
+        role="STAFF",
         is_active=True,
         phone="0901234569"
     )

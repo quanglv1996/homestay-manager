@@ -44,8 +44,8 @@ def login(
     db.commit()
     
     # Create tokens
-    access_token = create_access_token(data={"sub": user.id, "email": user.email, "role": user.role.value})
-    refresh_token = create_refresh_token(data={"sub": user.id})
+    access_token = create_access_token(data={"sub": str(user.id), "email": user.email, "role": user.role.value})
+    refresh_token = create_refresh_token(data={"sub": str(user.id)})
     
     return {
         "access_token": access_token,

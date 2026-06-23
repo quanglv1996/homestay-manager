@@ -1,14 +1,14 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime, Enum as SQLEnum, ForeignKey, Numeric
+from sqlalchemy import Column, Integer, String, Text, DateTime, Enum as SQLEnum, ForeignKey, Numeric, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
 
 
 class PropertyType(str, enum.Enum):
-    MINI_APARTMENT = "mini_apartment"
-    ROOM_RENTAL = "room_rental"
-    DORMITORY = "dormitory"
+    MINI_APARTMENT = "MINI_APARTMENT"
+    ROOM_RENTAL = "ROOM_RENTAL"
+    DORMITORY = "DORMITORY"
 
 
 class Property(Base):
@@ -36,6 +36,11 @@ class Property(Base):
     
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Soft Delete fields
+    is_deleted = Column(Boolean, default=False, nullable=False, index=True)
+    deleted_at = Column(DateTime, nullable=True)
+    deleted_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     
     # Relationships
     floors = relationship("Floor", back_populates="property", cascade="all, delete-orphan")

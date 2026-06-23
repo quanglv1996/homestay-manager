@@ -1,459 +1,773 @@
-# 🏠 Homestay Manager
+# 🏠 Homestay Manager - Hệ thống quản lý cho thuê nhà/phòng trọ
 
-> Hệ thống quản lý cho thuê nhà/phòng trọ hoàn chỉnh, production-ready
+**Version:** 1.0.0  
+**Last Updated:** 2026-06-23  
+**Status:** Production Ready ✅
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.109.2-009688.svg)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-19.0.0-61DAFB.svg)](https://reactjs.org/)
-[![Python](https://img.shields.io/badge/Python-3.12-3776AB.svg)](https://www.python.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3.3-3178C6.svg)](https://www.typescriptlang.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](https://www.docker.com/)
+---
 
-## 📋 Mô tả
+## 📋 Mục lục
 
-Homestay Manager là một hệ thống quản lý toàn diện cho việc cho thuê nhà, phòng trọ, và ký túc xá. Hệ thống được xây dựng với kiến trúc hiện đại, dễ mở rộng và ready for production.
+- [Tổng quan](#-tổng-quan)
+- [Kiến trúc hệ thống](#-kiến-trúc-hệ-thống)
+- [Công nghệ sử dụng](#-công-nghệ-sử-dụng)
+- [Cài đặt & Triển khai](#-cài-đặt--triển-khai)
+- [Cấu trúc Database](#-cấu-trúc-database)
+- [API Documentation](#-api-documentation)
+- [Tính năng chính](#-tính-năng-chính)
+- [Luồng nghiệp vụ](#-luồng-nghiệp-vụ)
+- [Security & Authentication](#-security--authentication)
+- [Troubleshooting](#-troubleshooting)
 
-### ✨ Tính năng chính
+---
 
-#### 🏢 Quản lý Tài sản
-- **Chung cư mini**: Tự động tạo phòng theo tầng
-- **Nhà cho thuê từng phòng**: Quản lý linh hoạt theo phòng
-- **Ký túc xá**: Quản lý giường và chỗ ở tập thể
-- Upload hình ảnh và tài liệu cho mỗi tài sản
+## 🎯 Tổng quan
 
-#### 👥 Quản lý Người thuê
-- Lưu trữ đầy đủ thông tin cá nhân
-- Upload CCCD/CMND (mặt trước, mặt sau)
-- Thông tin liên hệ khẩn cấp
-- Lịch sử hợp đồng và thanh toán
+**Homestay Manager** là hệ thống quản lý toàn diện cho việc cho thuê nhà trọ, mini apartment, dormitory với đầy đủ tính năng:
 
-#### 📝 Quản lý Hợp đồng
-- Tạo hợp đồng cho phòng trọ hoặc giường dorm
-- Hỗ trợ chu kỳ thanh toán: tháng/quý/năm
-- Theo dõi trạng thái: Draft/Active/Expired/Cancelled
-- Cảnh báo hợp đồng sắp hết hạn
+### Đặc điểm nổi bật
 
-#### 💰 Quản lý Hóa đơn
-- Tự động sinh hóa đơn hàng tháng
-- Tính toán chi tiết: tiền phòng + điện + nước + phí dịch vụ
-- Trạng thái thanh toán với mã màu trực quan
-- **Cảnh báo thông minh**:
-  - 🟢 Xanh: Còn > 3 ngày
-  - 🟠 Cam: Còn ≤ 3 ngày
-  - 🔴 Đỏ: Đến hạn hoặc quá hạn
+✅ **Quản lý đa dạng loại tài sản** - Mini Apartment, Room Rental, Dormitory  
+✅ **Quản lý hợp đồng thông minh** - Extend, Cancel, Transfer Room, Checkout  
+✅ **Theo dõi tài chính** - Invoices, Expenses, Debt tracking  
+✅ **Audit Log System** - Ghi nhận mọi thay đổi với old/new values  
+✅ **Soft Delete** - Xóa mềm để đảm bảo tính toàn vẹn dữ liệu  
+✅ **File Upload** - Image upload với validation và auto-resize  
+✅ **Role-based Access Control** - Admin, Manager, Staff  
 
-#### ⚡ Quản lý Điện nước
-- Ghi chỉ số công tơ điện/nước
-- Tự động tính sản lượng và thành tiền
-- Upload ảnh công tơ
-- Liên kết với hóa đơn
+### Use Cases
 
-#### 🔧 Quản lý Bảo trì
-- Tạo yêu cầu sửa chữa
-- Theo dõi trạng thái: Pending/In Progress/Completed
-- Quản lý chi phí sửa chữa
-- Ghi chú giải pháp
+- 🏢 **Công ty quản lý BĐS** - Quản lý nhiều tòa nhà/khu chung cư
+- 🏘️ **Chủ nhà trọ** - Quản lý phòng trọ, người thuê, thu tiền
+- 🏫 **Ký túc xá** - Quản lý giường, phòng, sinh viên
+- 👨‍💼 **Cá nhân** - Cho thuê căn hộ/phòng ở
 
-#### 💵 Quản lý Chi phí
-- Theo dõi các khoản chi phí vận hành
-- Phân loại: Điện chung, nước chung, lương, bảo trì, v.v.
-- Báo cáo lợi nhuận: Doanh thu - Chi phí
+---
 
-#### 📊 Dashboard Thống kê
-- Tổng quan tài sản, phòng, người thuê
-- Tỷ lệ lấp đầy realtime
-- Doanh thu theo tháng/quý/năm
-- Cảnh báo hóa đơn sắp đến hạn/quá hạn
-- Cảnh báo hợp đồng sắp hết hạn
-- Biểu đồ doanh thu trực quan
+## 🏗️ Kiến trúc hệ thống
 
-#### 🔐 Phân quyền Người dùng
-- **Admin**: Toàn quyền quản lý hệ thống
-- **Manager**: Quản lý tài sản và vận hành
-- **Staff**: Xem và cập nhật thông tin
-
-## 🏗️ Kiến trúc Hệ thống
+### Architecture Overview
 
 ```
-homestay-manager/
-├── backend/                 # FastAPI Backend
-│   ├── app/
-│   │   ├── api/            # API endpoints
-│   │   │   └── v1/
-│   │   │       └── endpoints/
-│   │   ├── core/           # Security, dependencies
-│   │   ├── models/         # SQLAlchemy models
-│   │   ├── schemas/        # Pydantic schemas
-│   │   ├── config.py       # Settings
-│   │   ├── database.py     # Database config
-│   │   └── main.py         # FastAPI app
-│   ├── alembic/            # Database migrations
-│   ├── scripts/            # Utility scripts
-│   ├── requirements.txt
-│   └── Dockerfile
-├── frontend/               # React Frontend
-│   ├── src/
-│   │   ├── components/    # React components
-│   │   ├── pages/         # Page components
-│   │   ├── stores/        # Zustand stores
-│   │   ├── lib/           # Utilities
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   ├── package.json
-│   └── Dockerfile
-├── nginx/                  # Nginx reverse proxy
-│   └── nginx.conf
-├── docker-compose.yml
-├── .env
-└── README.md
+┌─────────────────────────────────────────────────────────────┐
+│                        Nginx (Port 80)                       │
+│                      Reverse Proxy                           │
+└───────────────┬────────────────────────┬────────────────────┘
+                │                        │
+                ▼                        ▼
+┌───────────────────────────┐  ┌──────────────────────────────┐
+│   Frontend (Port 3000)    │  │   Backend API (Port 8000)    │
+│   React 19 + TypeScript   │  │   FastAPI + Python 3.12      │
+│   Material-UI + Zustand   │  │   SQLAlchemy 2.0 ORM         │
+│   Vite Build Tool         │  │   Pydantic v2 Validation     │
+└───────────────────────────┘  └──────────────┬───────────────┘
+                                              │
+                                              ▼
+                               ┌──────────────────────────────┐
+                               │  PostgreSQL 16 (Port 5432)   │
+                               │  Relational Database         │
+                               │  15 Tables + 10 Enums        │
+                               └──────────────────────────────┘
 ```
 
-## 🚀 Cài đặt và Khởi chạy
+### Service Communication
 
-### Yêu cầu
+```
+Browser → Nginx:80 → Frontend:3000 (Static Files)
+Browser → Nginx:80 → Backend:8000/api/v1/* (API Calls)
+Backend → PostgreSQL:5432 (Database Queries)
+Backend → /app/uploads (File Storage)
+```
+
+---
+
+## 💻 Công nghệ sử dụng
+
+### Backend Stack
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| **Python** | 3.12-slim | Core language |
+| **FastAPI** | 0.109.2 | Web framework |
+| **SQLAlchemy** | 2.0.27 | ORM |
+| **Alembic** | 1.13.1 | Database migrations |
+| **Pydantic** | 2.6.1 | Data validation |
+| **PostgreSQL** | 16-alpine | Database |
+| **python-jose** | 3.3.0 | JWT authentication |
+| **passlib** | 1.7.4 | Password hashing |
+| **Pillow** | 10.2.0 | Image processing |
+
+### Frontend Stack
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| **React** | 19.0.0 | UI framework |
+| **TypeScript** | 5.3.3 | Type safety |
+| **Material-UI** | 5.15.10 | Component library |
+| **Vite** | 5.1.0 | Build tool |
+| **Zustand** | 4.5.0 | State management |
+| **Axios** | 1.6.7 | HTTP client |
+
+### Infrastructure
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| **Docker** | Latest | Containerization |
+| **Docker Compose** | Latest | Orchestration |
+| **Nginx** | alpine | Reverse proxy |
+
+---
+
+## 🚀 Cài đặt & Triển khai
+
+### Prerequisites
 
 - Docker & Docker Compose
-- Git
+- Port 80, 3000, 5432, 8000 available
 
-### Bước 1: Clone Repository
+### Quick Start
 
 ```bash
+# 1. Clone repository
 git clone <repository-url>
 cd homestay-manager
+
+# 2. Configure environment (hoặc sử dụng .env có sẵn)
+# File .env đã được cấu hình sẵn cho môi trường dev
+
+# 3. Build and start all services
+docker compose up -d --build
+
+# 4. Wait for services to be ready (30-60 seconds)
+docker compose ps
+
+# 5. Access the application
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:8000
+# API Docs: http://localhost:8000/docs
 ```
 
-### Bước 2: Cấu hình Environment
-
-Copy file `.env.example` thành `.env` và điều chỉnh các giá trị:
-
-```bash
-cp .env.example .env
-```
-
-### Bước 3: Khởi động Hệ thống
-
-```bash
-docker compose up -d
-```
-
-Hệ thống sẽ:
-1. Khởi động PostgreSQL
-2. Chạy migrations tự động
-3. Seed dữ liệu mẫu
-4. Khởi động Backend (FastAPI)
-5. Khởi động Frontend (React)
-6. Khởi động Nginx
-
-### Bước 4: Truy cập Ứng dụng
-
-- **Frontend**: http://localhost
-- **Backend API**: http://localhost/api/v1
-- **API Documentation (Swagger)**: http://localhost/docs
-- **ReDoc**: http://localhost/redoc
-
-## 🔑 Tài khoản Mặc định
+### Default Credentials
 
 ```
-Admin:
 Email: admin@homestay.com
 Password: Admin@123456
-
-Manager:
-Email: manager@homestay.com
-Password: Manager@123
-
-Staff:
-Email: staff@homestay.com
-Password: Staff@123
 ```
+
+### Service URLs
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| **Frontend** | http://localhost:3000 | Main application UI |
+| **Backend API** | http://localhost:8000 | REST API |
+| **API Documentation** | http://localhost:8000/docs | OpenAPI/Swagger UI |
+| **Alternative Docs** | http://localhost:8000/redoc | ReDoc UI |
+| **Nginx** | http://localhost:80 | Reverse proxy |
+
+---
+
+## 🗄️ Cấu trúc Database
+
+### Database Schema Overview
+
+**Total:** 15 tables, 10 enums, 50+ relationships
+
+### Core Tables
+
+#### 1. Users (Người dùng)
+```sql
+users (
+  id: Primary Key
+  email: Unique, Not Null
+  hashed_password: Not Null
+  full_name: Not Null
+  role: Enum (ADMIN, MANAGER, STAFF)
+  is_active: Boolean, Default True
+  last_login: DateTime
+  created_at: DateTime
+)
+```
+
+#### 2. Properties (Tài sản)
+```sql
+properties (
+  id: Primary Key
+  name: Not Null
+  type: Enum (MINI_APARTMENT, ROOM_RENTAL, DORMITORY)
+  address: Not Null
+  description: Text
+  total_floors: Integer (auto-calculated)
+  total_rooms: Integer
+  contact_name, contact_phone, contact_email
+  default_pricing: electricity_price, water_price, internet_fee, etc.
+  created_at, updated_at
+  is_deleted, deleted_at, deleted_by_id (Soft Delete)
+)
+```
+
+#### 3. Rooms (Phòng)
+```sql
+rooms (
+  id: Primary Key
+  property_id: Foreign Key → properties
+  floor_id: Foreign Key → floors
+  room_code: Unique, Not Null
+  room_name: Not Null
+  area: Decimal (m²)
+  rent_price: Decimal
+  status: Enum (AVAILABLE, OCCUPIED, MAINTENANCE)
+  is_dormitory: Boolean
+  max_occupants: Integer
+  amenities: JSON
+  created_at, updated_at
+  is_deleted, deleted_at, deleted_by_id
+)
+```
+
+#### 4. Tenants (Người thuê)
+```sql
+tenants (
+  id: Primary Key
+  full_name: Not Null
+  id_card: Unique, Not Null
+  phone: Not Null
+  email
+  date_of_birth
+  permanent_address
+  emergency_contact_name, emergency_contact_phone
+  notes
+  is_active: Boolean
+  created_at, updated_at
+  is_deleted, deleted_at, deleted_by_id
+)
+```
+
+#### 5. Contracts (Hợp đồng)
+```sql
+contracts (
+  id: Primary Key
+  contract_code: Unique (CT{YEAR}{MONTH}{SEQUENCE})
+  tenant_id: Foreign Key → tenants
+  room_id: Foreign Key → rooms
+  bed_id: Foreign Key → beds (nullable)
+  start_date, end_date: Date
+  payment_day: Integer (1-31)
+  payment_cycle: Enum (MONTHLY, QUARTERLY, YEARLY)
+  rent_amount, deposit_amount: Decimal
+  status: Enum (DRAFT, ACTIVE, EXPIRED, CANCELLED)
+  terms_and_conditions, notes: Text
+  signed_date: Date
+  landlord_signature, tenant_signature: String
+  created_at, updated_at
+  is_deleted, deleted_at, deleted_by_id
+)
+```
+
+#### 6. Invoices (Hóa đơn)
+```sql
+invoices (
+  id: Primary Key
+  invoice_code: Unique (INV{YEAR}{MONTH}{SEQUENCE})
+  contract_id: Foreign Key → contracts
+  period_start, period_end, due_date: Date
+  status: Enum (UNPAID, PAID, OVERDUE, CANCELLED)
+  subtotal, tax, discount, total_amount, paid_amount: Decimal
+  payment_date, payment_method, payment_reference
+  notes: Text
+  created_at, updated_at
+  is_deleted, deleted_at, deleted_by_id
+)
+```
+
+#### 7. Invoice Items (Chi tiết hóa đơn)
+```sql
+invoice_items (
+  id: Primary Key
+  invoice_id: Foreign Key → invoices
+  description: Not Null
+  quantity, unit_price, amount: Decimal
+  item_type: String (rent, electricity, water, etc.)
+  meter_reading_id: Foreign Key → meter_readings
+)
+```
+
+#### 8. Audit Logs (Nhật ký kiểm toán)
+```sql
+audit_logs (
+  id: Primary Key
+  user_id: Foreign Key → users
+  action: Enum (CREATE, UPDATE, DELETE, RESTORE, LOGIN, 
+                TRANSFER_ROOM, CHECKOUT, EXTEND_CONTRACT, etc.)
+  entity_type: String (property, room, tenant, contract, etc.)
+  entity_id: Integer
+  description: Text
+  old_value, new_value, changes: JSON
+  ip_address, user_agent: String
+  created_at: DateTime
+  
+  Indexes: entity_type, entity_id, created_at, user_id
+)
+```
+
+#### 9. Attachments (Tệp đính kèm)
+```sql
+attachments (
+  id: Primary Key
+  filename: Unique (with timestamp)
+  original_filename: Not Null
+  file_path, file_size: Not Null
+  file_hash: String(64) SHA256
+  mime_type: String
+  type: Enum (IMAGE, DOCUMENT, VIDEO, OTHER)
+  description: Text
+  uploaded_by_id: Foreign Key → users
+  
+  # Foreign Keys to all entities
+  property_id, room_id, tenant_id, contract_id, 
+  maintenance_request_id, expense_id
+  
+  created_at: DateTime
+)
+```
+
+### Additional Tables
+
+10. **floors** - Tầng trong property
+11. **beds** - Giường trong phòng dormitory
+12. **meter_readings** - Chỉ số điện/nước
+13. **maintenance_requests** - Yêu cầu bảo trì
+14. **expenses** - Chi phí
+15. **notifications** - Thông báo
+
+### Enums
+
+```python
+UserRole: ADMIN, MANAGER, STAFF
+PropertyType: MINI_APARTMENT, ROOM_RENTAL, DORMITORY
+RoomStatus: AVAILABLE, OCCUPIED, MAINTENANCE
+ContractStatus: DRAFT, ACTIVE, EXPIRED, CANCELLED
+PaymentCycle: MONTHLY, QUARTERLY, YEARLY
+InvoiceStatus: UNPAID, PAID, OVERDUE, CANCELLED
+MaintenanceStatus: PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+ExpenseCategory: MAINTENANCE, UTILITIES, SUPPLIES, SALARY, OTHER
+NotificationType: INFO, WARNING, ERROR, SUCCESS
+AttachmentType: IMAGE, DOCUMENT, VIDEO, OTHER
+```
+
+---
 
 ## 📚 API Documentation
 
 ### Authentication
 
-#### Login
-```http
-POST /api/v1/auth/login
-Content-Type: application/json
+#### POST /api/v1/auth/login
+Đăng nhập và nhận JWT token.
 
+**Request:**
+```json
 {
   "email": "admin@homestay.com",
   "password": "Admin@123456"
 }
 ```
 
-Response:
+**Response:**
 ```json
 {
-  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-  "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
   "token_type": "bearer"
 }
 ```
 
-#### Get Current User
-```http
-GET /api/v1/auth/me
-Authorization: Bearer <access_token>
-```
+#### GET /api/v1/auth/me
+Lấy thông tin user hiện tại (sau khi login).
 
-### Resources
+**Headers:** `Authorization: Bearer <token>`
 
-- `GET /api/v1/properties` - Danh sách tài sản
-- `POST /api/v1/properties` - Tạo tài sản mới
-- `GET /api/v1/properties/{id}` - Chi tiết tài sản
-- `PUT /api/v1/properties/{id}` - Cập nhật tài sản
-- `DELETE /api/v1/properties/{id}` - Xóa tài sản
+### Properties API
 
-Tương tự cho: `rooms`, `tenants`, `contracts`, `invoices`, `meter-readings`, `maintenance`, `expenses`
+#### GET /api/v1/properties
+Danh sách tài sản.
 
-### Dashboard
-```http
-GET /api/v1/dashboard/stats
-Authorization: Bearer <access_token>
-```
+**Query:** `?skip=0&limit=100`
 
-Response:
+#### POST /api/v1/properties
+Tạo property mới.
+
+#### GET /api/v1/properties/{id}/stats
+Thống kê phòng (available/occupied/maintenance, occupancy_rate).
+
+#### POST /api/v1/properties/{id}/floors
+Tạo tầng mới.
+
+### Contracts API
+
+#### GET /api/v1/contracts
+Danh sách hợp đồng với JOIN details (tenant_name, room_code, property_name).
+
+#### POST /api/v1/contracts/{id}/extend
+Gia hạn hợp đồng (1-36 tháng).
+
+#### POST /api/v1/contracts/{id}/cancel
+Hủy hợp đồng với lý do.
+
+### Tenants API
+
+#### POST /api/v1/tenants/{id}/transfer-room
+**Chuyển phòng** - Đóng contract cũ, tạo contract mới.
+
+**Request:**
 ```json
 {
-  "total_properties": 3,
-  "total_rooms": 17,
-  "occupied_rooms": 1,
-  "available_rooms": 16,
-  "occupancy_rate": 5.88,
-  "total_tenants": 3,
-  "active_contracts": 1,
-  "revenue_this_month": 0,
-  "unpaid_invoices": 0,
-  "overdue_invoices": 0,
-  "expiring_contracts": 0
+  "new_room_id": 5,
+  "transfer_date": "2026-06-25",
+  "reason": "Upgrade to larger room"
 }
 ```
 
-## 🗄️ Database Schema
+#### POST /api/v1/tenants/{id}/checkout
+**Trả phòng** - Đóng contract, tạo final invoice.
 
-### Core Tables
-
-1. **users** - Người dùng hệ thống
-2. **properties** - Tài sản cho thuê
-3. **floors** - Tầng (cho chung cư mini)
-4. **rooms** - Phòng
-5. **beds** - Giường (cho ký túc xá)
-6. **tenants** - Người thuê
-7. **contracts** - Hợp đồng thuê
-8. **invoices** - Hóa đơn
-9. **invoice_items** - Chi tiết hóa đơn
-10. **meter_readings** - Chỉ số điện nước
-11. **maintenance_requests** - Yêu cầu bảo trì
-12. **expenses** - Chi phí vận hành
-13. **notifications** - Thông báo
-14. **attachments** - File đính kèm
-15. **audit_logs** - Nhật ký thao tác
-
-## 🛠️ Công nghệ Sử dụng
-
-### Backend
-- **FastAPI** - Modern web framework
-- **SQLAlchemy 2.0** - ORM
-- **PostgreSQL** - Database
-- **Alembic** - Database migrations
-- **Pydantic V2** - Data validation
-- **JWT** - Authentication
-- **Python 3.12**
-
-### Frontend
-- **React 19** - UI framework
-- **TypeScript** - Type safety
-- **Material UI** - Component library
-- **React Query** - Data fetching
-- **React Router** - Routing
-- **Zustand** - State management
-- **Vite** - Build tool
-
-### DevOps
-- **Docker** - Containerization
-- **Docker Compose** - Orchestration
-- **Nginx** - Reverse proxy
-
-## 📦 Database Seeding
-
-Dữ liệu mẫu bao gồm:
-
-1. **3 users**: Admin, Manager, Staff
-2. **3 properties**:
-   - Chung cư mini Hoàng Mai (3 tầng, 9 phòng)
-   - Nhà trọ Nguyễn Trãi (5 phòng)
-   - Ký túc xá Sinh viên (3 phòng với giường)
-3. **3 tenants** mẫu
-4. **1 contract** mẫu đang active
-
-## 🔧 Development
-
-### Backend Development
-
-```bash
-cd backend
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# venv\Scripts\activate   # Windows
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run migrations
-alembic upgrade head
-
-# Seed database
-python scripts/seed_database.py
-
-# Start development server
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+**Request:**
+```json
+{
+  "checkout_date": "2026-06-30",
+  "reason": "Contract ended",
+  "final_electricity": 150.5,
+  "final_water": 12.3
+}
 ```
 
-### Frontend Development
-
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
+**Response:**
+```json
+{
+  "message": "Checkout completed successfully",
+  "contract_code": "CT2026060002",
+  "final_invoice": {
+    "invoice_code": "INV2026060001",
+    "total_amount": 4334250.0,
+    "items": [
+      {"description": "Rent (prorated)", "amount": 3500000.0},
+      {"description": "Electricity (150.5 kWh)", "amount": 526750.0},
+      {"description": "Water (12.3 m³)", "amount": 307500.0}
+    ]
+  }
+}
 ```
 
-### Create New Migration
+### Upload API
 
-```bash
-cd backend
-alembic revision --autogenerate -m "description"
-alembic upgrade head
-```
+#### POST /api/v1/upload
+Upload files với entity linking.
 
-## 🚢 Production Deployment
+**Form Data:**
+- `files`: File[]
+- `entity_type`: property/room/tenant/contract
+- `entity_id`: integer
+- `description`: string (optional)
 
-### Environment Variables
+### Audit Logs API
 
-Đảm bảo cấu hình đúng trong file `.env`:
+#### GET /api/v1/audit-logs
+Lịch sử thay đổi với filters.
 
-```env
-# Security
-SECRET_KEY=<your-secure-random-key-min-32-chars>
-POSTGRES_PASSWORD=<strong-password>
-
-# Admin
-ADMIN_EMAIL=admin@yourdomain.com
-ADMIN_PASSWORD=<strong-password>
-```
-
-### Build & Deploy
-
-```bash
-# Build all services
-docker compose build
-
-# Start in production mode
-docker compose up -d
-
-# View logs
-docker compose logs -f
-
-# Stop services
-docker compose down
-```
-
-### Backup Database
-
-```bash
-docker compose exec postgres pg_dump -U homestay_user homestay_db > backup.sql
-```
-
-### Restore Database
-
-```bash
-docker compose exec -T postgres psql -U homestay_user homestay_db < backup.sql
-```
-
-## 📊 ERD (Entity Relationship Diagram)
-
-```
-users ──┐
-        │
-properties ──> floors ──> rooms ──> beds
-        │                  │
-        └──────────────────┼──> attachments
-                           │
-tenants ────────> contracts ──> invoices ──> invoice_items
-        │                  │           │
-        └──────────────────┼───────────┘
-                           │
-                    meter_readings
-                           │
-              maintenance_requests
-                           │
-                      expenses
-                           │
-                   notifications
-                           │
-                    audit_logs
-```
-
-## 🎯 Roadmap
-
-### Phase 1 (Completed) ✅
-- [x] Core system architecture
-- [x] Authentication & Authorization
-- [x] Property, Room, Tenant management
-- [x] Contract & Invoice management
-- [x] Dashboard with statistics
-- [x] Docker deployment
-
-### Phase 2 (Planned)
-- [ ] QR Code for contracts & invoices
-- [ ] File upload for room images
-- [ ] Export reports (Excel, PDF)
-- [ ] Email notifications
-- [ ] SMS notifications
-- [ ] Advanced search & filters
-- [ ] Audit log viewer
-
-### Phase 3 (Future)
-- [ ] Telegram Bot integration
-- [ ] Zalo OA integration
-- [ ] OCR for ID card auto-fill
-- [ ] OCR for meter reading from photo
-- [ ] AI revenue prediction
-- [ ] Mobile app (React Native)
-- [ ] Multi-language support
-- [ ] Dark mode
-- [ ] PWA support
-- [ ] Automated backup system
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📝 License
-
-This project is licensed under the MIT License.
-
-## 👨‍💻 Author
-
-Built with ❤️ by Senior Fullstack Architect
-
-## 📞 Support
-
-For support, please open an issue on GitHub or contact the development team.
+**Query:**
+- `user_id`, `action`, `entity_type`, `entity_id`
+- `from_date`, `to_date`, `search`
 
 ---
 
-**Note**: This is a production-ready system. Make sure to:
-1. Change all default passwords
-2. Use strong SECRET_KEY
-3. Configure proper database credentials
-4. Set up SSL/TLS for production
-5. Enable firewall and security measures
-6. Regular database backups
-7. Monitor system logs
+## 🎨 Tính năng chính
+
+### 1. Quản lý Properties (Tài sản)
+
+**Dashboard:**
+- 📊 Thống kê phòng theo status
+- 📈 Tỷ lệ lấp đầy (Occupancy Rate)
+- 🏢 Quản lý tầng (Floors)
+- 🖼️ Upload ảnh property
+
+**Validation:**
+- Không cho phép xóa nếu có contract ACTIVE/DRAFT
+- Không cho phép xóa nếu có invoice UNPAID/OVERDUE
+- Tự động update total_floors
+
+### 2. Quản lý Contracts (Hợp đồng)
+
+**Features:**
+- 📝 Tạo hợp đồng với auto-generate code
+- ⏰ Cảnh báo hợp đồng sắp hết hạn (≤30 ngày)
+- 📅 Gia hạn (1-36 tháng)
+- ❌ Hủy với lý do
+- 🔄 Chuyển phòng
+- 🚪 Trả phòng
+
+**Business Logic:**
+- Phòng phải AVAILABLE khi tạo contract
+- Không overlap trên cùng phòng
+- Tự động sync room status
+
+### 3. Transfer Room (Chuyển phòng)
+
+**Workflow:**
+```
+1. Chọn tenant → Click "Chuyển phòng"
+2. Chọn phòng mới (AVAILABLE)
+3. Nhập ngày chuyển và lý do
+4. System:
+   - Close contract cũ
+   - Create contract mới
+   - Update room statuses
+   - Log TRANSFER_ROOM audit
+```
+
+### 4. Checkout (Trả phòng)
+
+**Workflow:**
+```
+1. Chọn tenant → Click "Trả phòng"
+2. Nhập ngày, lý do, chỉ số điện/nước
+3. System:
+   - Calculate prorated rent
+   - Create final invoice
+   - Close contract
+   - Set room AVAILABLE
+   - Log CHECKOUT audit
+```
+
+**Invoice Calculation:**
+- Rent (tính theo ngày)
+- Electricity: usage × price_per_kwh
+- Water: usage × price_per_m3
+
+### 5. Soft Delete System
+
+Tất cả entities có:
+- `is_deleted`, `deleted_at`, `deleted_by_id`
+- Không mất dữ liệu lịch sử
+- Maintain referential integrity
+
+### 6. Audit Log System
+
+**Ghi nhận:**
+- CREATE, UPDATE, DELETE
+- TRANSFER_ROOM, CHECKOUT, EXTEND_CONTRACT
+- LOGIN, LOGOUT
+- Old/New values JSON
+- IP address & User Agent
+
+### 7. File Upload System
+
+**Features:**
+- Multi-file upload
+- Auto-resize images (max 1920x1920)
+- SHA256 hash
+- Storage: `uploads/{entity_type}/{entity_id}/`
+- Validation: type, size (10MB), PIL verify
+
+---
+
+## 🔄 Luồng nghiệp vụ
+
+### Use Case 1: Tạo hợp đồng mới
+
+```
+1. Admin tạo Property + Floors + Rooms
+2. Admin tạo Tenant
+3. Admin tạo Contract:
+   - Chọn Tenant, Room (AVAILABLE)
+   - Nhập dates, rent, deposit
+   - Status = DRAFT/ACTIVE
+4. System:
+   - Auto-generate contract_code
+   - Update room → OCCUPIED
+   - Create audit log
+```
+
+### Use Case 2: Chuyển phòng
+
+```
+1. Tenant yêu cầu chuyển phòng
+2. Manager → Tenants page → "Chuyển phòng"
+3. Chọn phòng mới, ngày, lý do
+4. System:
+   - Close contract cũ (EXPIRED)
+   - Create contract mới (ACTIVE)
+   - Update room statuses
+   - Log TRANSFER_ROOM
+```
+
+### Use Case 3: Trả phòng & Thanh toán
+
+```
+1. Tenant thông báo trả phòng
+2. Manager kiểm tra chỉ số điện/nước
+3. "Trả phòng" → Nhập dates, usage
+4. System:
+   - Calculate charges
+   - Create final invoice with items
+   - Close contract
+   - Room → AVAILABLE
+   - Log CHECKOUT
+5. Manager thu tiền, mark PAID
+```
+
+---
+
+## 🔐 Security & Authentication
+
+### JWT Authentication
+
+```
+1. Login → POST /auth/login
+2. Backend validates credentials
+3. Generate JWT tokens (30 mins / 7 days)
+4. Frontend stores in localStorage
+5. API calls: Authorization: Bearer <token>
+```
+
+### Role-Based Access Control
+
+| Role | Permissions |
+|------|-------------|
+| **ADMIN** | Full access |
+| **MANAGER** | CRUD properties/contracts |
+| **STAFF** | View only |
+
+### Password Security
+
+- Bcrypt hashing (passlib)
+- Min 6 characters
+- Change password requires old password
+
+### CORS Configuration
+
+```python
+# Development
+allow_origins=["*"]
+
+# Production
+allow_origins=["https://yourdomain.com"]
+```
+
+---
+
+## 🛠️ Troubleshooting
+
+### Problem: Login 400 Bad Request
+
+**Solution:** Added `CORSPreflightMiddleware` to handle OPTIONS requests.
+
+```python
+# backend/app/main.py
+class CORSPreflightMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if request.method == "OPTIONS":
+            return JSONResponse(content={}, headers={...})
+        return await call_next(request)
+```
+
+### Problem: TypeScript errors
+
+**Solution:**
+```typescript
+// Prefix unused with underscore
+(_e, value) => {}
+
+// Add undefined checks
+{value !== null && value !== undefined && (
+  <Component />
+)}
+```
+
+### Problem: Docker build fails
+
+```bash
+# Clean up
+docker system prune -a
+
+# Rebuild
+docker compose build --no-cache
+```
+
+---
+
+## 📖 Development Guide
+
+### Project Structure
+
+```
+homestay-manager/
+├── backend/         # FastAPI application
+│   ├── alembic/     # DB migrations
+│   ├── app/         # Source code
+│   │   ├── api/     # Endpoints
+│   │   ├── core/    # Security, audit
+│   │   ├── models/  # SQLAlchemy
+│   │   └── schemas/ # Pydantic
+│   └── uploads/     # File storage
+├── frontend/        # React application
+│   └── src/
+│       ├── pages/   # UI pages
+│       ├── stores/  # State management
+│       └── lib/     # API client
+├── nginx/           # Reverse proxy
+└── docker-compose.yml
+```
+
+### Adding New Feature
+
+1. Create migration
+2. Add model
+3. Add schema
+4. Add endpoint
+5. Add frontend page
+
+---
+
+## 🚀 Production Deployment
+
+### Checklist
+
+- [ ] Change admin password
+- [ ] Generate new SECRET_KEY
+- [ ] Set DEBUG=False
+- [ ] Configure CORS_ORIGINS
+- [ ] Set up SSL/TLS
+- [ ] Configure backups
+- [ ] Set up monitoring
+
+### Backup
+
+```bash
+# Database
+docker compose exec postgres pg_dump \
+  -U homestay_user homestay_db > backup.sql
+
+# Uploads
+docker compose cp backend:/app/uploads ./backup_uploads
+```
+
+---
+
+## 📞 Support
+
+**API Docs:** http://localhost:8000/docs  
+**Phase Reports:**
+- [PHASE_1.1_COMPLETE.md](PHASE_1.1_COMPLETE.md) - Soft Delete + Audit
+- [PHASE_1.2_COMPLETE.md](PHASE_1.2_COMPLETE.md) - File Upload
+- [PHASE_1.3_COMPLETE.md](PHASE_1.3_COMPLETE.md) - Properties CRUD
+- [PHASE_1.5_COMPLETE.md](PHASE_1.5_COMPLETE.md) - Transfer + Checkout
+
+---
+
+## 📝 License
+
+**Version:** 1.0.0  
+**Built with:** FastAPI + React + PostgreSQL + Docker  
+**Last Updated:** 2026-06-23
+
+---
+
+**🎉 Hệ thống đã sẵn sàng! Happy Managing! 🏠**

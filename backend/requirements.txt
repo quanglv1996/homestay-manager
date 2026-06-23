@@ -12,10 +12,10 @@ asyncpg==0.29.0
 # Authentication & Security
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+bcrypt==4.1.2
 python-dotenv==1.0.1
-pydantic==2.6.1
-pydantic-settings==2.1.0
 pydantic[email]==2.6.1
+pydantic-settings==2.1.0
 
 # File Upload & Validation
 python-magic==0.4.27
@@ -46,7 +46,7 @@ loguru==0.7.2
 
 # Testing
 pytest==8.0.0
-pytest-asyncio==0.23.4
+pytest-asyncio
 pytest-cov==4.1.0
 
 # Code Quality

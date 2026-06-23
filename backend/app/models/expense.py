@@ -1,19 +1,19 @@
 from datetime import datetime, date
-from sqlalchemy import Column, Integer, String, Text, DateTime, Date, Enum as SQLEnum, Numeric
+from sqlalchemy import Column, Integer, String, Text, DateTime, Date, Enum as SQLEnum, ForeignKey, Numeric, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
 
 
 class ExpenseCategory(str, enum.Enum):
-    UTILITIES = "utilities"
-    MAINTENANCE = "maintenance"
-    SALARY = "salary"
-    INSURANCE = "insurance"
-    TAX = "tax"
-    MARKETING = "marketing"
-    SUPPLIES = "supplies"
-    OTHER = "other"
+    UTILITIES = "UTILITIES"
+    MAINTENANCE = "MAINTENANCE"
+    SALARY = "SALARY"
+    INSURANCE = "INSURANCE"
+    TAX = "TAX"
+    MARKETING = "MARKETING"
+    SUPPLIES = "SUPPLIES"
+    OTHER = "OTHER"
 
 
 class Expense(Base):
@@ -35,6 +35,11 @@ class Expense(Base):
     
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Soft Delete fields
+    is_deleted = Column(Boolean, default=False, nullable=False, index=True)
+    deleted_at = Column(DateTime, nullable=True)
+    deleted_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     
     # Relationships
     attachments = relationship("Attachment", back_populates="expense", cascade="all, delete-orphan")

@@ -7,6 +7,10 @@ while ! pg_isready -h postgres -p 5432 -U $POSTGRES_USER; do
 done
 echo "PostgreSQL is ready!"
 
+echo "Creating database if it doesn't exist..."
+PGPASSWORD=$POSTGRES_PASSWORD psql -h postgres -U $POSTGRES_USER -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = '$POSTGRES_DB'" | grep -q 1 || PGPASSWORD=$POSTGRES_PASSWORD createdb -h postgres -U $POSTGRES_USER $POSTGRES_DB
+echo "Database ready!"
+
 echo "Running database migrations..."
 alembic upgrade head
 

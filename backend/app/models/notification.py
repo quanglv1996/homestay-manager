@@ -6,12 +6,12 @@ import enum
 
 
 class NotificationType(str, enum.Enum):
-    PAYMENT_DUE = "payment_due"
-    PAYMENT_OVERDUE = "payment_overdue"
-    CONTRACT_EXPIRING = "contract_expiring"
-    MAINTENANCE_REQUEST = "maintenance_request"
-    ROOM_AVAILABLE = "room_available"
-    SYSTEM = "system"
+    PAYMENT_DUE = "PAYMENT_DUE"
+    PAYMENT_OVERDUE = "PAYMENT_OVERDUE"
+    CONTRACT_EXPIRING = "CONTRACT_EXPIRING"
+    MAINTENANCE_REQUEST = "MAINTENANCE_REQUEST"
+    ROOM_AVAILABLE = "ROOM_AVAILABLE"
+    SYSTEM = "SYSTEM"
 
 
 class Notification(Base):

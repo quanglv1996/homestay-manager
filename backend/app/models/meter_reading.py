@@ -1,5 +1,5 @@
 from datetime import datetime, date
-from sqlalchemy import Column, Integer, DateTime, Date, ForeignKey, Numeric
+from sqlalchemy import Column, Integer, DateTime, Date, ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -39,6 +39,3 @@ class MeterReading(Base):
     # Relationships
     room = relationship("Room", back_populates="meter_readings")
     invoice_items = relationship("InvoiceItem", back_populates="meter_reading")
-
-
-from sqlalchemy import String, Text

@@ -19,6 +19,7 @@ import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
   Home as HomeIcon,
+  MeetingRoom as RoomIcon,
   People as PeopleIcon,
   Description as ContractIcon,
   Receipt as InvoiceIcon,
@@ -52,6 +53,7 @@ export default function Layout({ children }: LayoutProps) {
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Tài sản', icon: <HomeIcon />, path: '/properties' },
+    { text: 'Phòng', icon: <RoomIcon />, path: '/rooms' },
     { text: 'Người thuê', icon: <PeopleIcon />, path: '/tenants' },
     { text: 'Hợp đồng', icon: <ContractIcon />, path: '/contracts' },
     { text: 'Hóa đơn', icon: <InvoiceIcon />, path: '/invoices' },

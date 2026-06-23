@@ -18,16 +18,16 @@ depends_on = None
 
 def upgrade() -> None:
     # Create enum types
-    op.execute("CREATE TYPE userrole AS ENUM ('admin', 'manager', 'staff')")
-    op.execute("CREATE TYPE propertytype AS ENUM ('mini_apartment', 'room_rental', 'dormitory')")
-    op.execute("CREATE TYPE roomstatus AS ENUM ('available', 'occupied', 'maintenance')")
-    op.execute("CREATE TYPE contractstatus AS ENUM ('draft', 'active', 'expired', 'cancelled')")
-    op.execute("CREATE TYPE paymentcycle AS ENUM ('monthly', 'quarterly', 'yearly')")
-    op.execute("CREATE TYPE invoicestatus AS ENUM ('unpaid', 'paid', 'overdue', 'cancelled')")
-    op.execute("CREATE TYPE maintenancestatus AS ENUM ('pending', 'in_progress', 'completed', 'cancelled')")
-    op.execute("CREATE TYPE expensecategory AS ENUM ('utilities', 'maintenance', 'salary', 'insurance', 'tax', 'marketing', 'supplies', 'other')")
-    op.execute("CREATE TYPE notificationtype AS ENUM ('payment_due', 'payment_overdue', 'contract_expiring', 'maintenance_request', 'room_available', 'system')")
-    op.execute("CREATE TYPE attachmenttype AS ENUM ('image', 'document', 'video', 'other')")
+    op.execute("CREATE TYPE userrole AS ENUM ('ADMIN', 'MANAGER', 'STAFF')")
+    op.execute("CREATE TYPE propertytype AS ENUM ('MINI_APARTMENT', 'ROOM_RENTAL', 'DORMITORY')")
+    op.execute("CREATE TYPE roomstatus AS ENUM ('AVAILABLE', 'OCCUPIED', 'MAINTENANCE')")
+    op.execute("CREATE TYPE contractstatus AS ENUM ('DRAFT', 'ACTIVE', 'EXPIRED', 'CANCELLED')")
+    op.execute("CREATE TYPE paymentcycle AS ENUM ('MONTHLY', 'QUARTERLY', 'YEARLY')")
+    op.execute("CREATE TYPE invoicestatus AS ENUM ('UNPAID', 'PAID', 'OVERDUE', 'CANCELLED')")
+    op.execute("CREATE TYPE maintenancestatus AS ENUM ('PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED')")
+    op.execute("CREATE TYPE expensecategory AS ENUM ('UTILITIES', 'MAINTENANCE', 'SALARY', 'INSURANCE', 'TAX', 'MARKETING', 'SUPPLIES', 'OTHER')")
+    op.execute("CREATE TYPE notificationtype AS ENUM ('PAYMENT_DUE', 'PAYMENT_OVERDUE', 'CONTRACT_EXPIRING', 'MAINTENANCE_REQUEST', 'ROOM_AVAILABLE', 'SYSTEM')")
+    op.execute("CREATE TYPE attachmenttype AS ENUM ('IMAGE', 'DOCUMENT', 'VIDEO', 'OTHER')")
     
     # Create users table
     op.create_table('users',
@@ -101,7 +101,7 @@ def upgrade() -> None:
         sa.Column('cleaning_fee', sa.Numeric(precision=10, scale=2), nullable=True),
         sa.Column('parking_fee', sa.Numeric(precision=10, scale=2), nullable=True),
         sa.Column('other_fees', sa.Numeric(precision=10, scale=2), nullable=True, server_default='0'),
-        sa.Column('status', postgresql.ENUM(name='roomstatus', create_type=False), nullable=False, server_default='available'),
+        sa.Column('status', postgresql.ENUM(name='roomstatus', create_type=False), nullable=False, server_default='AVAILABLE'),
         sa.Column('is_dormitory', sa.Boolean(), nullable=True, server_default='false'),
         sa.Column('description', sa.Text(), nullable=True),
         sa.Column('amenities', sa.Text(), nullable=True),
@@ -166,12 +166,12 @@ def upgrade() -> None:
         sa.Column('start_date', sa.Date(), nullable=False),
         sa.Column('end_date', sa.Date(), nullable=False),
         sa.Column('payment_day', sa.Integer(), nullable=False),
-        sa.Column('payment_cycle', postgresql.ENUM(name='paymentcycle', create_type=False), nullable=False, server_default='monthly'),
+        sa.Column('payment_cycle', postgresql.ENUM(name='paymentcycle', create_type=False), nullable=False, server_default='MONTHLY'),
         sa.Column('rent_amount', sa.Numeric(precision=10, scale=2), nullable=False),
         sa.Column('deposit_amount', sa.Numeric(precision=10, scale=2), nullable=True, server_default='0'),
         sa.Column('terms_and_conditions', sa.Text(), nullable=True),
         sa.Column('notes', sa.Text(), nullable=True),
-        sa.Column('status', postgresql.ENUM(name='contractstatus', create_type=False), nullable=False, server_default='draft'),
+        sa.Column('status', postgresql.ENUM(name='contractstatus', create_type=False), nullable=False, server_default='DRAFT'),
         sa.Column('signed_date', sa.Date(), nullable=True),
         sa.Column('landlord_signature', sa.String(length=500), nullable=True),
         sa.Column('tenant_signature', sa.String(length=500), nullable=True),
@@ -193,7 +193,7 @@ def upgrade() -> None:
         sa.Column('period_start', sa.Date(), nullable=False),
         sa.Column('period_end', sa.Date(), nullable=False),
         sa.Column('due_date', sa.Date(), nullable=False),
-        sa.Column('status', postgresql.ENUM(name='invoicestatus', create_type=False), nullable=False, server_default='unpaid'),
+        sa.Column('status', postgresql.ENUM(name='invoicestatus', create_type=False), nullable=False, server_default='UNPAID'),
         sa.Column('subtotal', sa.Numeric(precision=10, scale=2), nullable=True, server_default='0'),
         sa.Column('tax', sa.Numeric(precision=10, scale=2), nullable=True, server_default='0'),
         sa.Column('discount', sa.Numeric(precision=10, scale=2), nullable=True, server_default='0'),
@@ -264,7 +264,7 @@ def upgrade() -> None:
         sa.Column('description', sa.Text(), nullable=False),
         sa.Column('category', sa.String(length=50), nullable=True),
         sa.Column('priority', sa.String(length=20), nullable=True, server_default='medium'),
-        sa.Column('status', postgresql.ENUM(name='maintenancestatus', create_type=False), nullable=False, server_default='pending'),
+        sa.Column('status', postgresql.ENUM(name='maintenancestatus', create_type=False), nullable=False, server_default='PENDING'),
         sa.Column('estimated_cost', sa.Numeric(precision=10, scale=2), nullable=True),
         sa.Column('actual_cost', sa.Numeric(precision=10, scale=2), nullable=True),
         sa.Column('reported_date', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
@@ -323,7 +323,7 @@ def upgrade() -> None:
         sa.Column('file_path', sa.String(length=500), nullable=False),
         sa.Column('file_size', sa.Integer(), nullable=True),
         sa.Column('mime_type', sa.String(length=100), nullable=True),
-        sa.Column('type', postgresql.ENUM(name='attachmenttype', create_type=False), nullable=True, server_default='document'),
+        sa.Column('type', postgresql.ENUM(name='attachmenttype', create_type=False), nullable=True, server_default='DOCUMENT'),
         sa.Column('property_id', sa.Integer(), nullable=True),
         sa.Column('room_id', sa.Integer(), nullable=True),
         sa.Column('tenant_id', sa.Integer(), nullable=True),
