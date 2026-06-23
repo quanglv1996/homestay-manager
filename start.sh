@@ -16,14 +16,30 @@ echo ""
 echo "[3/3] Đợi containers khởi động..."
 sleep 5
 
+# Lấy IP address của máy
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    MACHINE_IP=$(hostname -I | awk '{print $1}')
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    MACHINE_IP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}' | head -1)
+else
+    MACHINE_IP=$(ipconfig | grep "IPv4 Address" | head -1 | awk '{print $NF}' 2>/dev/null || echo "YOUR_MACHINE_IP")
+fi
+
 echo ""
 echo "========================================"
 echo "  Khởi động thành công!"
 echo "========================================"
 echo ""
-echo "Frontend: http://localhost"
-echo "Backend API: http://localhost:3000"
+echo "🌐 Frontend (Web App):"
+echo "  - Localhost: http://localhost"
+echo "  - LAN Network: http://$MACHINE_IP"
 echo ""
-echo "Xem logs: docker-compose logs -f"
-echo "Dừng ứng dụng: docker-compose down"
+echo "🔌 Backend API:"
+echo "  - Localhost: http://localhost:8000"
+echo "  - LAN Network: http://$MACHINE_IP:8000"
+echo ""
+echo "📝 Lệnh hữu ích:"
+echo "  - Xem logs: docker-compose logs -f"
+echo "  - Dừng ứng dụng: docker-compose down"
+echo "  - Khởi động lại: docker-compose restart"
 echo ""
