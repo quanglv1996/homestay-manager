@@ -1,10 +1,26 @@
 [
   {
-    "id": "2484cdaf-7cd2-4b59-9ef6-6352e1ccbc61",
-    "houseId": "c9fe5a21-c999-4b68-a52b-790707ba1075",
-    "name": "Phòng Nam A1",
-    "description": "Cạnh cửa ra vào",
-    "createdAt": "2026-06-23T08:27:00.458069",
+    "id": "ed85c181-96dd-49c5-9db7-3defaa172fab",
+    "houseId": "2c6c2263-b72c-4f96-b225-254a756f9ce4",
+    "name": "Phòng 1",
+    "description": "Nam, Cạnh cửa ra vào",
+    "createdAt": "2026-06-23T09:18:44.358126",
+    "updatedAt": null
+  },
+  {
+    "id": "1902d3b0-d13b-4a68-980d-b9facfcf3663",
+    "houseId": "2c6c2263-b72c-4f96-b225-254a756f9ce4",
+    "name": "Phòng 2",
+    "description": "Nam, Cạnh bếp",
+    "createdAt": "2026-06-23T09:20:00.120788",
+    "updatedAt": null
+  },
+  {
+    "id": "8e77e0ff-e495-4012-a721-f9e095cd1e70",
+    "houseId": "2c6c2263-b72c-4f96-b225-254a756f9ce4",
+    "name": "Phòng 3",
+    "description": "Nữ",
+    "createdAt": "2026-06-23T09:21:18.163910",
     "updatedAt": null
   }
 ]

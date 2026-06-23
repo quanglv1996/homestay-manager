@@ -1,0 +1,22 @@
+[
+  {
+    "id": "e65bee78-4da7-44cc-aacd-f563520f52e7",
+    "contractId": "aece009b-27e7-4b8c-ade0-376fc721082b",
+    "month": "2026-06",
+    "isCollected": true,
+    "collectionDate": "2026-06-15",
+    "notes": "",
+    "createdAt": "2026-06-23T09:48:09.404969",
+    "updatedAt": "2026-06-23T10:07:03.771869"
+  },
+  {
+    "id": "088946ea-1e18-4ec2-9e87-f7c25c147232",
+    "contractId": "aece009b-27e7-4b8c-ade0-376fc721082b",
+    "month": "2026-05",
+    "isCollected": true,
+    "collectionDate": "2026-06-18",
+    "notes": "",
+    "createdAt": "2026-06-23T09:48:20.759433",
+    "updatedAt": "2026-06-23T10:08:16.891479"
+  }
+]

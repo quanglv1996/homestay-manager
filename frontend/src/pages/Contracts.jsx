@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { getContracts, createContract, updateContract, deleteContract } from '../services/api';
+import { getContractsWithAssignments, createContract, updateContract, deleteContract } from '../services/api';
+import RentCollectionPanel from '../components/RentCollectionPanel';
 
 function Contracts() {
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingContract, setEditingContract] = useState(null);
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [sortBy, setSortBy] = useState('tenantName'); // 'tenantName', 'startDate', 'price', 'dome'
+  const [sortOrder, setSortOrder] = useState('asc'); // 'asc', 'desc'
+  const [filterByDome, setFilterByDome] = useState(''); // empty = all domes
   const [formData, setFormData] = useState({
     tenantName: '',
     tenantPhone: '',
@@ -15,10 +21,14 @@ function Contracts() {
     endDate: '',
     price: '',
     equipment: [],
+    images: [],
+    hasParking: false,
+    parkingInfo: null,
     notes: '',
     status: 'active'
   });
   const [newEquipment, setNewEquipment] = useState('');
+  const [newImageUrl, setNewImageUrl] = useState('');
 
   useEffect(() => {
     loadContracts();
@@ -26,7 +36,7 @@ function Contracts() {
 
   const loadContracts = async () => {
     try {
-      const response = await getContracts();
+      const response = await getContractsWithAssignments();
       setContracts(response.data);
       setLoading(false);
     } catch (error) {
@@ -37,10 +47,40 @@ function Contracts() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setSubmitting(true);
+    
     try {
+      // Validation
+      if (!formData.tenantName.trim()) {
+        throw new Error('Vui lòng nhập tên người thuê');
+      }
+      if (!formData.tenantPhone.trim()) {
+        throw new Error('Vui lòng nhập số điện thoại');
+      }
+      if (!formData.startDate) {
+        throw new Error('Vui lòng chọn ngày bắt đầu');
+      }
+      if (!formData.endDate) {
+        throw new Error('Vui lòng chọn ngày kết thúc');
+      }
+      if (new Date(formData.startDate) >= new Date(formData.endDate)) {
+        throw new Error('Ngày bắt đầu phải trước ngày kết thúc');
+      }
+      if (!formData.price || parseFloat(formData.price) <= 0) {
+        throw new Error('Vui lòng nhập giá thuê hợp lệ');
+      }
+      if (formData.hasParking && (!formData.parkingInfo?.vehicleInfo?.trim() || !formData.parkingInfo?.cardNumber?.trim() || !formData.parkingInfo?.parkingFee)) {
+        throw new Error('Vui lòng điền đầy đủ thông tin gửi xe');
+      }
+      
       const contractData = {
         ...formData,
-        price: parseFloat(formData.price)
+        price: parseFloat(formData.price),
+        parkingInfo: formData.hasParking && formData.parkingInfo ? {
+          ...formData.parkingInfo,
+          parkingFee: parseFloat(formData.parkingInfo.parkingFee)
+        } : null
       };
       
       if (editingContract) {
@@ -51,10 +91,14 @@ function Contracts() {
       setShowModal(false);
       setEditingContract(null);
       resetForm();
-      loadContracts();
+      setError('');
+      await loadContracts();
     } catch (error) {
       console.error('Error saving contract:', error);
-      alert('Có lỗi xảy ra khi lưu dữ liệu');
+      const errorMessage = error.response?.data?.detail || error.message || 'Có lỗi xảy ra khi lưu dữ liệu';
+      setError(errorMessage);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -65,6 +109,9 @@ function Contracts() {
       tenantPhone: contract.tenantPhone,
       tenantEmail: contract.tenantEmail || '',
       tenantIdCard: contract.tenantIdCard || '',
+      images: contract.images || [],
+      hasParking: contract.hasParking || false,
+      parkingInfo: contract.parkingInfo || null,
       startDate: contract.startDate.split('T')[0],
       endDate: contract.endDate.split('T')[0],
       price: contract.price,
@@ -89,6 +136,7 @@ function Contracts() {
 
   const handleAddNew = () => {
     setEditingContract(null);
+    setError('');
     resetForm();
     setShowModal(true);
   };
@@ -103,10 +151,14 @@ function Contracts() {
       endDate: '',
       price: '',
       equipment: [],
+      images: [],
+      hasParking: false,
+      parkingInfo: null,
       notes: '',
       status: 'active'
     });
     setNewEquipment('');
+    setNewImageUrl('');
   };
 
   const handleAddEquipment = () => {
@@ -126,9 +178,99 @@ function Contracts() {
     });
   };
 
+  const handleAddImage = () => {
+    if (newImageUrl.trim()) {
+      setFormData({
+        ...formData,
+        images: [...formData.images, newImageUrl.trim()]
+      });
+      setNewImageUrl('');
+    }
+  };
+
+  const handleRemoveImage = (index) => {
+    setFormData({
+      ...formData,
+      images: formData.images.filter((_, i) => i !== index)
+    });
+  };
+
+  const handleParkingToggle = (checked) => {
+    setFormData({
+      ...formData,
+      hasParking: checked,
+      parkingInfo: checked ? { vehicleInfo: '', cardNumber: '', parkingFee: '' } : null
+    });
+  };
+
+  const handleParkingInfoChange = (field, value) => {
+    setFormData({
+      ...formData,
+      parkingInfo: {
+        ...formData.parkingInfo,
+        [field]: value
+      }
+    });
+  };
+
+  const getTotalMonthlyFee = () => {
+    let total = parseFloat(formData.price) || 0;
+    if (formData.hasParking && formData.parkingInfo) {
+      total += parseFloat(formData.parkingInfo.parkingFee) || 0;
+    }
+    return total;
+  };
+
   if (loading) {
     return <div className="loading">Đang tải dữ liệu...</div>;
   }
+
+  // Get unique domes from contracts
+  const getUniqueDomes = () => {
+    const domes = new Set();
+    contracts.forEach(contract => {
+      if (contract.assignments && contract.assignments.length > 0) {
+        contract.assignments.forEach(assignment => {
+          domes.add(assignment.houseName);
+        });
+      }
+    });
+    return Array.from(domes).sort();
+  };
+
+  // Filter and sort contracts
+  const getProcessedContracts = () => {
+    let filtered = contracts;
+
+    // Apply dome filter
+    if (filterByDome) {
+      filtered = filtered.filter(contract => {
+        return contract.assignments && 
+               contract.assignments.some(a => a.houseName === filterByDome);
+      });
+    }
+
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      let compareValue = 0;
+      
+      if (sortBy === 'tenantName') {
+        compareValue = a.tenantName.localeCompare(b.tenantName);
+      } else if (sortBy === 'startDate') {
+        compareValue = new Date(a.startDate) - new Date(b.startDate);
+      } else if (sortBy === 'price') {
+        compareValue = a.price - b.price;
+      } else if (sortBy === 'dome') {
+        const aDome = a.assignments?.[0]?.houseName || '';
+        const bDome = b.assignments?.[0]?.houseName || '';
+        compareValue = aDome.localeCompare(bDome);
+      }
+
+      return sortOrder === 'asc' ? compareValue : -compareValue;
+    });
+
+    return sorted;
+  };
 
   return (
     <div>
@@ -139,6 +281,104 @@ function Contracts() {
         </button>
       </div>
 
+      {/* Sort and Filter Controls */}
+      <div style={{
+        marginBottom: '1.5rem',
+        padding: '1rem',
+        backgroundColor: '#f7fafc',
+        borderRadius: '8px',
+        border: '1px solid #e2e8f0',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '1rem'
+      }}>
+        <div>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#2d3748' }}>
+            Sắp xếp theo:
+          </label>
+          <select 
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.5rem',
+              border: '1px solid #cbd5e0',
+              borderRadius: '6px',
+              fontSize: '0.9rem'
+            }}
+          >
+            <option value="tenantName">Tên khách hàng</option>
+            <option value="startDate">Ngày ký hợp đồng</option>
+            <option value="price">Giá thuê</option>
+            <option value="dome">Dome</option>
+          </select>
+        </div>
+
+        <div>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#2d3748' }}>
+            Thứ tự:
+          </label>
+          <select 
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.5rem',
+              border: '1px solid #cbd5e0',
+              borderRadius: '6px',
+              fontSize: '0.9rem'
+            }}
+          >
+            <option value="asc">Tăng dần</option>
+            <option value="desc">Giảm dần</option>
+          </select>
+        </div>
+
+        <div>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#2d3748' }}>
+            Lọc theo Dome:
+          </label>
+          <select 
+            value={filterByDome}
+            onChange={(e) => setFilterByDome(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.5rem',
+              border: '1px solid #cbd5e0',
+              borderRadius: '6px',
+              fontSize: '0.9rem'
+            }}
+          >
+            <option value="">Tất cả Dome</option>
+            {getUniqueDomes().map(dome => (
+              <option key={dome} value={dome}>{dome}</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+          <button 
+            onClick={() => {
+              setSortBy('tenantName');
+              setSortOrder('asc');
+              setFilterByDome('');
+            }}
+            style={{
+              width: '100%',
+              padding: '0.5rem',
+              backgroundColor: '#cbd5e0',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              color: '#2d3748'
+            }}
+          >
+            🔄 Đặt lại
+          </button>
+        </div>
+      </div>
+
       {contracts.length === 0 ? (
         <div className="empty-state">
           <h3>Chưa có hợp đồng nào</h3>
@@ -146,7 +386,7 @@ function Contracts() {
         </div>
       ) : (
         <div className="contract-list">
-          {contracts.map(contract => (
+          {getProcessedContracts().map(contract => (
             <div key={contract.id} className="contract-item">
               <h3>{contract.tenantName}</h3>
               <div className="contract-info">
@@ -160,8 +400,23 @@ function Contracts() {
                   <strong>CMND/CCCD:</strong> {contract.tenantIdCard || 'N/A'}
                 </div>
                 <div>
-                  <strong>Giá:</strong> {contract.price.toLocaleString('vi-VN')} VNĐ/tháng
+                  <strong>Giá thuê:</strong> {contract.price.toLocaleString('vi-VN')} VNĐ/tháng
                 </div>
+                {contract.hasParking && contract.parkingInfo && (
+                  <>
+                    <div style={{ color: '#3182ce', fontWeight: '500' }}>
+                      🅿️ Có đăng ký gửi xe
+                    </div>
+                    <div style={{ marginLeft: '1.5rem' }}>
+                      <div><strong>Thông tin xe:</strong> {contract.parkingInfo.vehicleInfo}</div>
+                      <div><strong>Mã thẻ:</strong> {contract.parkingInfo.cardNumber}</div>
+                      <div><strong>Phí gửi xe:</strong> {contract.parkingInfo.parkingFee.toLocaleString('vi-VN')} VNĐ/tháng</div>
+                    </div>
+                    <div style={{ color: '#48bb78', fontWeight: '600' }}>
+                      <strong>Tổng phí hàng tháng:</strong> {(contract.price + contract.parkingInfo.parkingFee).toLocaleString('vi-VN')} VNĐ
+                    </div>
+                  </>
+                )}
                 <div>
                   <strong>Từ ngày:</strong> {new Date(contract.startDate).toLocaleDateString('vi-VN')}
                 </div>
@@ -169,6 +424,22 @@ function Contracts() {
                   <strong>Đến ngày:</strong> {new Date(contract.endDate).toLocaleDateString('vi-VN')}
                 </div>
               </div>
+              
+              {contract.images && contract.images.length > 0 && (
+                <div style={{ marginTop: '1rem' }}>
+                  <strong>Ảnh hợp đồng:</strong>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                    {contract.images.map((img, index) => (
+                      <img 
+                        key={index} 
+                        src={img} 
+                        alt={`Contract ${index + 1}`}
+                        style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
               
               {contract.equipment && contract.equipment.length > 0 && (
                 <div style={{ marginTop: '1rem' }}>
@@ -185,6 +456,45 @@ function Contracts() {
                 <div style={{ marginTop: '1rem' }}>
                   <strong>Ghi chú:</strong> {contract.notes}
                 </div>
+              )}
+
+              {contract.assignments && contract.assignments.length > 0 && (
+                <div style={{ 
+                  marginTop: '1rem', 
+                  padding: '1rem', 
+                  backgroundColor: '#f0f7ff',
+                  borderLeft: '4px solid #3182ce',
+                  borderRadius: '4px'
+                }}>
+                  <strong style={{ color: '#3182ce' }}>📍 Vị trí gán:</strong>
+                  <div style={{ marginTop: '0.5rem' }}>
+                    {contract.assignments.map((assignment, index) => (
+                      <div 
+                        key={index}
+                        style={{
+                          padding: '0.75rem',
+                          marginBottom: index < contract.assignments.length - 1 ? '0.5rem' : '0',
+                          backgroundColor: 'white',
+                          borderRadius: '4px',
+                          fontSize: '0.9rem'
+                        }}
+                      >
+                        <div><strong>Dome:</strong> {assignment.houseName}</div>
+                        <div><strong>Phòng:</strong> {assignment.roomName}</div>
+                        <div><strong>Giường:</strong> {assignment.bedName} - {assignment.level === 'top' ? '🛏️ Tầng trên' : '🛏️ Tầng dưới'}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {contract.assignments && contract.assignments.length > 0 && (
+                <RentCollectionPanel 
+                  contractId={contract.id}
+                  contractPrice={contract.price}
+                  startDate={contract.startDate}
+                  endDate={contract.endDate}
+                />
               )}
 
               <div className="contract-actions">
@@ -220,9 +530,30 @@ function Contracts() {
 
       {/* Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onClick={() => {
+          setShowModal(false);
+          setError('');
+        }}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>{editingContract ? 'Sửa hợp đồng' : 'Thêm hợp đồng mới'}</h2>
+            
+            {error && (
+              <div style={{
+                background: '#fed7d7',
+                color: '#c53030',
+                padding: '1rem',
+                borderRadius: '6px',
+                marginBottom: '1rem',
+                border: '1px solid #fc8181',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                <span>{error}</span>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>Tên người thuê *</label>
@@ -287,7 +618,7 @@ function Contracts() {
               </div>
 
               <div className="form-group">
-                <label>Giá (VNĐ/tháng) *</label>
+                <label>Giá thuê (VNĐ/tháng) *</label>
                 <input
                   type="number"
                   required
@@ -295,6 +626,109 @@ function Contracts() {
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   placeholder="1000000"
                 />
+              </div>
+
+              <div className="form-group" style={{ borderTop: '2px solid #e2e8f0', paddingTop: '1rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.hasParking}
+                    onChange={(e) => handleParkingToggle(e.target.checked)}
+                    style={{ width: 'auto', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '1rem', fontWeight: '600', color: '#3182ce' }}>
+                    🅿️ Có đăng ký gửi xe
+                  </span>
+                </label>
+                
+                {formData.hasParking && (
+                  <div style={{ marginTop: '1rem', padding: '1rem', background: '#f7fafc', borderRadius: '6px' }}>
+                    <div className="form-group">
+                      <label>Thông tin xe (loại xe, biển số) *</label>
+                      <input
+                        type="text"
+                        required={formData.hasParking}
+                        value={formData.parkingInfo?.vehicleInfo || ''}
+                        onChange={(e) => handleParkingInfoChange('vehicleInfo', e.target.value)}
+                        placeholder="Honda SH 29A-12345"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Mã thẻ xe *</label>
+                      <input
+                        type="text"
+                        required={formData.hasParking}
+                        value={formData.parkingInfo?.cardNumber || ''}
+                        onChange={(e) => handleParkingInfoChange('cardNumber', e.target.value)}
+                        placeholder="P001"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Phí gửi xe (VNĐ/tháng) *</label>
+                      <input
+                        type="number"
+                        required={formData.hasParking}
+                        value={formData.parkingInfo?.parkingFee || ''}
+                        onChange={(e) => handleParkingInfoChange('parkingFee', e.target.value)}
+                        placeholder="100000"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {formData.hasParking && formData.parkingInfo?.parkingFee && (
+                <div style={{ 
+                  background: '#f0fff4', 
+                  padding: '1rem', 
+                  borderRadius: '6px',
+                  border: '2px solid #48bb78',
+                  marginBottom: '1rem'
+                }}>
+                  <strong style={{ color: '#22543d' }}>Tổng phí hàng tháng:</strong>
+                  <span style={{ fontSize: '1.2rem', fontWeight: '700', color: '#22543d', marginLeft: '0.5rem' }}>
+                    {getTotalMonthlyFee().toLocaleString('vi-VN')} VNĐ
+                  </span>
+                  <div style={{ fontSize: '0.85rem', color: '#2f855a', marginTop: '0.25rem' }}>
+                    = Giá thuê {parseFloat(formData.price || 0).toLocaleString('vi-VN')} + Phí gửi xe {parseFloat(formData.parkingInfo.parkingFee).toLocaleString('vi-VN')}
+                  </div>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label>Ảnh hợp đồng</label>
+                <div className="equipment-list">
+                  {formData.images.map((img, index) => (
+                    <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <img src={img} alt={`Preview ${index}`} style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
+                      <input type="text" value={img} readOnly style={{ flex: 1 }} />
+                      <button type="button" onClick={() => handleRemoveImage(index)}>
+                        Xóa
+                      </button>
+                    </div>
+                  ))}
+                  <div className="equipment-item">
+                    <input
+                      type="text"
+                      value={newImageUrl}
+                      onChange={(e) => setNewImageUrl(e.target.value)}
+                      placeholder="Nhập URL ảnh hoặc base64..."
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddImage();
+                        }
+                      }}
+                    />
+                    <button 
+                      type="button" 
+                      onClick={handleAddImage}
+                      style={{ background: '#48bb78' }}
+                    >
+                      Thêm
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="form-group">
@@ -353,11 +787,14 @@ function Contracts() {
               </div>
 
               <div className="modal-actions">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                <button type="button" className="btn btn-secondary" onClick={() => {
+                  setShowModal(false);
+                  setError('');
+                }}>
                   Hủy
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  {editingContract ? 'Cập nhật' : 'Thêm mới'}
+                <button type="submit" className="btn btn-primary" disabled={submitting}>
+                  {submitting ? 'Đang lưu...' : (editingContract ? 'Cập nhật' : 'Thêm mới')}
                 </button>
               </div>
             </form>

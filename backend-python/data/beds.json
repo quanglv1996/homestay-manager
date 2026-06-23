@@ -1,10 +1,74 @@
 [
   {
-    "id": "4a50069c-a89a-4853-ac74-b2435cb657d1",
-    "roomId": "2484cdaf-7cd2-4b59-9ef6-6352e1ccbc61",
-    "name": "Giường A11",
-    "description": "Cạnh cửa ra vào",
-    "createdAt": "2026-06-23T08:28:14.512186",
+    "id": "ab7edc18-204a-48dd-97b7-853bd6623f32",
+    "roomId": "ed85c181-96dd-49c5-9db7-3defaa172fab",
+    "name": "A1",
+    "description": "Cạnh cửa phòng",
+    "createdAt": "2026-06-23T09:19:01.604713",
     "updatedAt": null
+  },
+  {
+    "id": "e99b5474-58b1-4bfa-add7-1bba59059796",
+    "roomId": "ed85c181-96dd-49c5-9db7-3defaa172fab",
+    "name": "A2",
+    "description": "Giữa phòng",
+    "createdAt": "2026-06-23T09:19:20.569027",
+    "updatedAt": null
+  },
+  {
+    "id": "6b436be3-93da-47ba-b39a-2639848d0394",
+    "roomId": "ed85c181-96dd-49c5-9db7-3defaa172fab",
+    "name": "A3",
+    "description": "Cạnh cửa sổ",
+    "createdAt": "2026-06-23T09:19:28.267042",
+    "updatedAt": null
+  },
+  {
+    "id": "6d618552-7b19-4adc-be26-1fb3c8da3e94",
+    "roomId": "1902d3b0-d13b-4a68-980d-b9facfcf3663",
+    "name": "B1",
+    "description": "Cạnh cửa ra vào",
+    "createdAt": "2026-06-23T09:20:46.637842",
+    "updatedAt": "2026-06-23T09:31:32.112989"
+  },
+  {
+    "id": "0fa1b856-daaf-4e8a-bebb-5915a5cc25cc",
+    "roomId": "1902d3b0-d13b-4a68-980d-b9facfcf3663",
+    "name": "B2",
+    "description": "Giữa phòng",
+    "createdAt": "2026-06-23T09:20:55.621364",
+    "updatedAt": "2026-06-23T09:31:38.468029"
+  },
+  {
+    "id": "5429f9cc-eb06-4bcc-8c37-f6b1aa466d17",
+    "roomId": "1902d3b0-d13b-4a68-980d-b9facfcf3663",
+    "name": "B3",
+    "description": "Cạnh cửa sổ",
+    "createdAt": "2026-06-23T09:21:06.172421",
+    "updatedAt": "2026-06-23T09:31:43.827875"
+  },
+  {
+    "id": "0c0d24aa-a9fe-44e1-96b0-81a6241e0c11",
+    "roomId": "8e77e0ff-e495-4012-a721-f9e095cd1e70",
+    "name": "C1",
+    "description": "Cạnh cửa ra vào",
+    "createdAt": "2026-06-23T09:21:25.935792",
+    "updatedAt": "2026-06-23T09:31:52.079123"
+  },
+  {
+    "id": "20d2a041-e425-4d54-be17-83975bab3423",
+    "roomId": "8e77e0ff-e495-4012-a721-f9e095cd1e70",
+    "name": "C2",
+    "description": "Giữa",
+    "createdAt": "2026-06-23T09:21:33.536157",
+    "updatedAt": "2026-06-23T09:31:58.965546"
+  },
+  {
+    "id": "22e4c596-55b0-454d-8a74-6f762ba89645",
+    "roomId": "8e77e0ff-e495-4012-a721-f9e095cd1e70",
+    "name": "C3",
+    "description": "Cạnh cửa sổ",
+    "createdAt": "2026-06-23T09:22:11.528943",
+    "updatedAt": "2026-06-23T09:32:04.299821"
   }
 ]

@@ -137,7 +137,10 @@ function HouseDetail() {
     e.preventDefault();
     try {
       if (editingBed) {
-        await updateBed(editingBed.id, bedFormData);
+        await updateBed(editingBed.id, {
+          ...bedFormData,
+          roomId: editingBed.roomId
+        });
       } else {
         await createBed({ 
           ...bedFormData, 
@@ -205,6 +208,14 @@ function HouseDetail() {
 
   const getContract = (contractId) => {
     return contracts.find(c => c.id === contractId);
+  };
+
+  const getUnassignedContracts = () => {
+    // Get all assigned contract IDs
+    const assignedContractIds = new Set(assignments.map(a => a.contractId));
+    
+    // Filter to get only unassigned contracts with active status
+    return contracts.filter(c => c.status === 'active' && !assignedContractIds.has(c.id));
   };
 
   const handleMouseEnter = (e, assignment) => {
@@ -323,9 +334,14 @@ function HouseDetail() {
                           return (
                             <div key={bed.id} className="bed-card-container" style={{ gridColumn: 'span 1' }}>
                               <div style={{ background: 'white', padding: '1rem', borderRadius: '8px', border: '2px solid #e0e0e0' }}>
-                                <div style={{ fontWeight: '600', fontSize: '1.1rem', marginBottom: '0.75rem', textAlign: 'center' }}>
+                                <div style={{ fontWeight: '600', fontSize: '1.1rem', marginBottom: '0.5rem', textAlign: 'center' }}>
                                   {bed.name}
                                 </div>
+                                {bed.description && (
+                                  <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '0.75rem', textAlign: 'center', fontStyle: 'italic' }}>
+                                    {bed.description}
+                                  </div>
+                                )}
                                 
                                 {/* Top Level */}
                                 <div 
@@ -551,15 +567,15 @@ function HouseDetail() {
                   onChange={(e) => setAssignFormData({ contractId: e.target.value })}
                 >
                   <option value="">-- Chọn hợp đồng --</option>
-                  {contracts.filter(c => c.status === 'active').map(contract => (
+                  {getUnassignedContracts().map(contract => (
                     <option key={contract.id} value={contract.id}>
                       {contract.tenantName} - {contract.tenantPhone} ({contract.price.toLocaleString('vi-VN')} VNĐ)
                     </option>
                   ))}
                 </select>
-                {contracts.filter(c => c.status === 'active').length === 0 && (
+                {getUnassignedContracts().length === 0 && (
                   <p style={{ color: '#ed8936', marginTop: '0.5rem', fontSize: '0.9rem' }}>
-                    Chưa có hợp đồng nào. Vui lòng tạo hợp đồng trước.
+                    Không có hợp đồng nào. Vui lòng tạo hoặc gỡ bỏ các gán hiện có.
                   </p>
                 )}
               </div>

@@ -1,22 +1,44 @@
 [
   {
-    "id": "548cb369-0000-477a-a017-78a42e1dc1df",
+    "id": "aece009b-27e7-4b8c-ade0-376fc721082b",
     "tenantName": "Lê Văn Quang",
-    "tenantPhone": "0386293986",
+    "tenantPhone": "0123456789",
     "tenantEmail": "quanglvhust@gmail.com",
-    "tenantIdCard": "123466789",
-    "startDate": "2026-06-23",
-    "endDate": "2026-12-23",
+    "tenantIdCard": "123456789",
+    "startDate": "2026-06-01",
+    "endDate": "2026-12-01",
     "price": 1800000.0,
     "equipment": [
-      "Chìa khóa tủ",
-      "Chăn",
-      "Ga",
-      "Gối"
+      "a",
+      "b"
     ],
+    "images": [],
+    "hasParking": false,
+    "parkingInfo": null,
     "notes": "",
     "status": "active",
-    "createdAt": "2026-06-23T08:29:27.320277",
-    "updatedAt": null
+    "createdAt": "2026-06-23T09:16:50.206246",
+    "updatedAt": "2026-06-23T09:18:02.579093"
+  },
+  {
+    "id": "43a28c0c-6fd5-4ef5-9362-dcf27eb9e23f",
+    "tenantName": "Lê Văn Q",
+    "tenantPhone": "16423135132",
+    "tenantEmail": "quanglvhust@gmail.com",
+    "tenantIdCard": "426541531321",
+    "startDate": "2026-06-23",
+    "endDate": "2026-12-23",
+    "price": 1700000.0,
+    "equipment": [
+      "s",
+      "d"
+    ],
+    "images": [],
+    "hasParking": false,
+    "parkingInfo": null,
+    "notes": "",
+    "status": "active",
+    "createdAt": "2026-06-23T09:17:28.715721",
+    "updatedAt": "2026-06-23T09:18:15.287464"
   }
 ]
