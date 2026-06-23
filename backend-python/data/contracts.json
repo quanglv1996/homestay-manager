@@ -1,0 +1,22 @@
+[
+  {
+    "id": "548cb369-0000-477a-a017-78a42e1dc1df",
+    "tenantName": "Lê Văn Quang",
+    "tenantPhone": "0386293986",
+    "tenantEmail": "quanglvhust@gmail.com",
+    "tenantIdCard": "123466789",
+    "startDate": "2026-06-23",
+    "endDate": "2026-12-23",
+    "price": 1800000.0,
+    "equipment": [
+      "Chìa khóa tủ",
+      "Chăn",
+      "Ga",
+      "Gối"
+    ],
+    "notes": "",
+    "status": "active",
+    "createdAt": "2026-06-23T08:29:27.320277",
+    "updatedAt": null
+  }
+]
