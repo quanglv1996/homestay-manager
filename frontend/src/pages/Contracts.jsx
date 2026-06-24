@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getContractsWithAssignments, createContract, updateContract, deleteContract } from '../services/api';
 import RentCollectionPanel from '../components/RentCollectionPanel';
+import { formatNumberDisplay, removeNumberFormatting } from '../utils/formatNumber';
 
 // Fixed equipment list for handover
 const FIXED_EQUIPMENT = ['Chăn', 'Ga', 'Vỏ gối', 'Ruột gối', 'Chìa khóa tủ', 'Chìa khóa nhà'];
@@ -985,9 +986,9 @@ function Contracts() {
                 <input
                   type="text"
                   required
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  placeholder="1000000"
+                  value={formatNumberDisplay(formData.price)}
+                  onChange={(e) => setFormData({ ...formData, price: removeNumberFormatting(e.target.value) })}
+                  placeholder="1 000 000"
                 />
               </div>
 
@@ -995,9 +996,9 @@ function Contracts() {
                 <label>Tiền cọc (VNĐ)</label>
                 <input
                   type="text"
-                  value={formData.deposit}
-                  onChange={(e) => setFormData({ ...formData, deposit: e.target.value })}
-                  placeholder={formData.price || '0'}
+                  value={formatNumberDisplay(formData.deposit)}
+                  onChange={(e) => setFormData({ ...formData, deposit: removeNumberFormatting(e.target.value) })}
+                  placeholder={formatNumberDisplay(formData.price) || '0'}
                 />
                 <small style={{ color: '#666', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
                   Mặc định: {(parseFloat(formData.price) || 0).toLocaleString('vi-VN')} VNĐ (bằng giá thuê)
@@ -1042,11 +1043,11 @@ function Contracts() {
                     <div className="form-group">
                       <label>Phí gửi xe (VNĐ/tháng) *</label>
                       <input
-                        type="number"
+                        type="text"
                         required={formData.hasParking}
-                        value={formData.parkingInfo?.parkingFee || ''}
-                        onChange={(e) => handleParkingInfoChange('parkingFee', e.target.value)}
-                        placeholder="100000"
+                        value={formatNumberDisplay(formData.parkingInfo?.parkingFee || '')}
+                        onChange={(e) => handleParkingInfoChange('parkingFee', removeNumberFormatting(e.target.value))}
+                        placeholder="100 000"
                       />
                     </div>
                   </div>
@@ -1240,10 +1241,10 @@ function Contracts() {
               <div className="form-group">
                 <label>Mức hỗ trợ điện nước/tháng (VNĐ)</label>
                 <input
-                  type="number"
-                  value={formData.utilitySubsidy}
-                  onChange={(e) => setFormData({ ...formData, utilitySubsidy: parseFloat(e.target.value) || 0 })}
-                  placeholder="Ví dụ: 200000"
+                  type="text"
+                  value={formatNumberDisplay(formData.utilitySubsidy)}
+                  onChange={(e) => setFormData({ ...formData, utilitySubsidy: removeNumberFormatting(e.target.value) || '0' })}
+                  placeholder="Ví dụ: 200 000"
                   min="0"
                 />
                 <small style={{ color: '#666' }}>Mỗi ngày sẽ hỗ trợ = Mức hỗ trợ / số ngày trong tháng × số ngày ở</small>

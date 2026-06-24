@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { formatNumberDisplay, removeNumberFormatting } from '../utils/formatNumber';
 
 function UtilityBills() {
   const [houses, setHouses] = useState([]);
@@ -541,18 +542,18 @@ function UtilityBills() {
                         <div>
                           <label style={{ display: 'block', fontSize: '0.9rem', color: '#666', marginBottom: '0.25rem' }}>💡 Điện (VNĐ)</label>
                           <input
-                            type="number"
-                            value={editingInputForm.electricity}
-                            onChange={(e) => setEditingInputForm({...editingInputForm, electricity: e.target.value})}
+                            type="text"
+                            value={formatNumberDisplay(editingInputForm.electricity)}
+                            onChange={(e) => setEditingInputForm({...editingInputForm, electricity: removeNumberFormatting(e.target.value)})}
                             style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e0', borderRadius: '4px' }}
                           />
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.9rem', color: '#666', marginBottom: '0.25rem' }}>💧 Nước (VNĐ)</label>
                           <input
-                            type="number"
-                            value={editingInputForm.water}
-                            onChange={(e) => setEditingInputForm({...editingInputForm, water: e.target.value})}
+                            type="text"
+                            value={formatNumberDisplay(editingInputForm.water)}
+                            onChange={(e) => setEditingInputForm({...editingInputForm, water: removeNumberFormatting(e.target.value)})}
                             style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e0', borderRadius: '4px' }}
                           />
                         </div>
@@ -824,24 +825,24 @@ function UtilityBills() {
               <div className="form-group">
                 <label>Tiền Điện (VNĐ) *</label>
                 <input
-                  type="number"
+                  type="text"
                   required
                   min="0"
-                  value={formData.electricity}
-                  onChange={(e) => setFormData({ ...formData, electricity: e.target.value })}
-                  placeholder="100000"
+                  value={formatNumberDisplay(formData.electricity)}
+                  onChange={(e) => setFormData({ ...formData, electricity: removeNumberFormatting(e.target.value) })}
+                  placeholder="100 000"
                 />
               </div>
 
               <div className="form-group">
                 <label>Tiền Nước (VNĐ) *</label>
                 <input
-                  type="number"
+                  type="text"
                   required
                   min="0"
-                  value={formData.water}
-                  onChange={(e) => setFormData({ ...formData, water: e.target.value })}
-                  placeholder="50000"
+                  value={formatNumberDisplay(formData.water)}
+                  onChange={(e) => setFormData({ ...formData, water: removeNumberFormatting(e.target.value) })}
+                  placeholder="50 000"
                 />
               </div>
 

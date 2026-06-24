@@ -6,6 +6,7 @@ import {
   deleteExpense,
   getHouses 
 } from '../services/api';
+import { formatNumberDisplay, removeNumberFormatting } from '../utils/formatNumber';
 
 function Expenses() {
   const [expenses, setExpenses] = useState([]);
@@ -329,11 +330,11 @@ function Expenses() {
               <div className="form-group">
                 <label>Số tiền (VNĐ) *</label>
                 <input
-                  type="number"
+                  type="text"
                   required
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  placeholder="500000"
+                  value={formatNumberDisplay(formData.amount)}
+                  onChange={(e) => setFormData({ ...formData, amount: removeNumberFormatting(e.target.value) })}
+                  placeholder="500 000"
                 />
               </div>
 
