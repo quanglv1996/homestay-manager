@@ -4,7 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from typing import Optional, List
 
-from app.models import House, Room, Bed, Contract, Assignment, UtilityBill, Expense, RentExpense, RentCollection
+from app.models import House, Room, Bed, Contract, Assignment, UtilityBill, UtilityDistribution, Expense, RentExpense, RentCollection
 from app import data_service
 
 app = FastAPI(title="Dome Homestay Manager API")
@@ -227,6 +227,68 @@ def update_utility_bill(bill_id: str, bill: UtilityBill):
 def delete_utility_bill(bill_id: str):
     if not data_service.delete_utility_bill(bill_id):
         raise HTTPException(status_code=404, detail="Utility bill not found")
+    return None
+
+# Utility Distributions
+@app.get("/api/utility-distributions")
+def get_utility_distributions(room_id: Optional[str] = Query(None), month: Optional[str] = Query(None)):
+    """Get utility distributions, optionally filtered by room_id or month (YYYY-MM)"""
+    return data_service.get_utility_distributions(room_id, month)
+
+@app.get("/api/utility-distributions/{distribution_id}")
+def get_utility_distribution(distribution_id: str):
+    distribution = data_service.get_utility_distribution_by_id(distribution_id)
+    if not distribution:
+        raise HTTPException(status_code=404, detail="Utility distribution not found")
+    return distribution
+
+@app.post("/api/utility-distributions/room/{room_id}/distribute")
+def distribute_utility_by_room(room_id: str, electricity: float = Query(...), water: float = Query(...), month: str = Query(...), house_id: Optional[str] = Query(None)):
+    """
+    Create utility distribution for a room.
+    Automatically distributes costs to all contracts in the room based on days active.
+    
+    Query parameters:
+    - room_id: Room ID
+    - electricity: Total electricity cost (VNĐ)
+    - water: Total water cost (VNĐ)
+    - month: Month in YYYY-MM format
+    - house_id: (optional) House ID (will use room's house if not provided)
+    """
+    result = data_service.distribute_utility_cost_to_room(room_id, month, electricity, water, house_id)
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["message"])
+    return result
+
+@app.post("/api/utility-distributions/house/{house_id}/distribute")
+def distribute_utility_by_house(house_id: str, electricity: float = Query(...), water: float = Query(...), month: str = Query(...)):
+    """
+    Create utility distribution for an entire house.
+    Automatically distributes costs to all contracts across all rooms in the house based on days active.
+    
+    Query parameters:
+    - house_id: House ID
+    - electricity: Total electricity cost (VNĐ)
+    - water: Total water cost (VNĐ)
+    - month: Month in YYYY-MM format
+    """
+    result = data_service.distribute_utility_cost_to_house(house_id, month, electricity, water)
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["message"])
+    return result
+
+@app.put("/api/utility-distributions/{distribution_id}")
+def update_utility_distribution(distribution_id: str, distribution: UtilityDistribution):
+    from app.models import UtilityDistribution
+    updated = data_service.update_utility_distribution(distribution_id, distribution)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Utility distribution not found")
+    return updated
+
+@app.delete("/api/utility-distributions/{distribution_id}", status_code=204)
+def delete_utility_distribution(distribution_id: str):
+    if not data_service.delete_utility_distribution(distribution_id):
+        raise HTTPException(status_code=404, detail="Utility distribution not found")
     return None
 
 # Expenses

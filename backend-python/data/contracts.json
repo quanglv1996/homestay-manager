@@ -84,8 +84,8 @@
     "tenantEmail": "no_email@gmail.com",
     "tenantIdCard": "1",
     "startDate": "2026-06-02",
-    "endDate": "2026-08-11",
-    "price": 1499996.0,
+    "endDate": "2026-07-02",
+    "price": 1500000.0,
     "equipment": [
       "Chăn",
       "Ga",
@@ -100,7 +100,7 @@
     "notes": "",
     "status": "active",
     "createdAt": "2026-06-24T02:00:12.384340",
-    "updatedAt": "2026-06-24T04:28:57.055024",
+    "updatedAt": "2026-06-24T04:47:40.203372",
     "durationMonths": 1,
     "extensionHistory": [
       {
@@ -117,7 +117,8 @@
         "extensionMonths": 1,
         "notes": ""
       }
-    ]
+    ],
+    "deposit": 1500000.0
   },
   {
     "id": "4399db9f-7ece-4938-9d6c-0ad14bdaf7aa",
@@ -126,7 +127,7 @@
     "tenantEmail": "no_email@gmail.com",
     "tenantIdCard": "1",
     "startDate": "2026-06-02",
-    "endDate": "2026-06-10",
+    "endDate": "2026-07-10",
     "price": 1000000.0,
     "equipment": [
       "Chăn"
@@ -137,6 +138,16 @@
     "notes": "",
     "status": "active",
     "createdAt": "2026-06-24T02:01:56.869465",
-    "updatedAt": null
+    "updatedAt": "2026-06-24T04:49:34.398874",
+    "durationMonths": 1,
+    "extensionHistory": [
+      {
+        "extendedDate": "2026-06-24",
+        "previousEndDate": "2026-06-10",
+        "newEndDate": "2026-07-10",
+        "extensionMonths": 1,
+        "notes": ""
+      }
+    ]
   }
 ]

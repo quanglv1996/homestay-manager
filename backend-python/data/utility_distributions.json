@@ -1,1 +1,72 @@
-[]
+[
+  {
+    "id": "fccc0e35-c62d-4aae-a3e6-a0b1501e8e54",
+    "billId": null,
+    "roomId": "ed85c181-96dd-49c5-9db7-3defaa172fab",
+    "contractId": "aece009b-27e7-4b8c-ade0-376fc721082b",
+    "houseId": "2c6c2263-b72c-4f96-b225-254a756f9ce4",
+    "month": "2026-06",
+    "amount": 87379.0,
+    "isPaid": false,
+    "paidDate": null,
+    "notes": "Điện: 200,000 VNĐ, Nước: 100,000 VNĐ | 30 ngày (01/06/2026 - 30/06/2026)",
+    "createdAt": "2026-06-24T06:40:56.210180",
+    "updatedAt": null
+  },
+  {
+    "id": "d62dad1a-5afa-4320-9cee-63042e8c46df",
+    "billId": null,
+    "roomId": "1902d3b0-d13b-4a68-980d-b9facfcf3663",
+    "contractId": "cfd0f979-fd1d-4c7c-8f43-d8ca07cfab28",
+    "houseId": "2c6c2263-b72c-4f96-b225-254a756f9ce4",
+    "month": "2026-06",
+    "amount": 20388.0,
+    "isPaid": false,
+    "paidDate": null,
+    "notes": "Điện: 200,000 VNĐ, Nước: 100,000 VNĐ | 7 ngày (24/06/2026 - 30/06/2026)",
+    "createdAt": "2026-06-24T06:40:56.224054",
+    "updatedAt": null
+  },
+  {
+    "id": "699b9732-9a0a-4ea9-9469-844f5264e716",
+    "billId": null,
+    "roomId": "1902d3b0-d13b-4a68-980d-b9facfcf3663",
+    "contractId": "0fff2f85-433d-45c2-b061-ad6e88b86bb6",
+    "houseId": "2c6c2263-b72c-4f96-b225-254a756f9ce4",
+    "month": "2026-06",
+    "amount": 84466.0,
+    "isPaid": false,
+    "paidDate": null,
+    "notes": "Điện: 200,000 VNĐ, Nước: 100,000 VNĐ | 29 ngày (02/06/2026 - 30/06/2026)",
+    "createdAt": "2026-06-24T06:40:56.237734",
+    "updatedAt": null
+  },
+  {
+    "id": "366e4b15-4dd0-44b0-b567-08afb2d7c9da",
+    "billId": null,
+    "roomId": "8e77e0ff-e495-4012-a721-f9e095cd1e70",
+    "contractId": "43a28c0c-6fd5-4ef5-9362-dcf27eb9e23f",
+    "houseId": "2c6c2263-b72c-4f96-b225-254a756f9ce4",
+    "month": "2026-06",
+    "amount": 23301.0,
+    "isPaid": false,
+    "paidDate": null,
+    "notes": "Điện: 200,000 VNĐ, Nước: 100,000 VNĐ | 8 ngày (23/06/2026 - 30/06/2026)",
+    "createdAt": "2026-06-24T06:40:56.251766",
+    "updatedAt": null
+  },
+  {
+    "id": "f56de0ae-7d81-4064-98e3-4bbb139647d6",
+    "billId": null,
+    "roomId": "8e77e0ff-e495-4012-a721-f9e095cd1e70",
+    "contractId": "4399db9f-7ece-4938-9d6c-0ad14bdaf7aa",
+    "houseId": "2c6c2263-b72c-4f96-b225-254a756f9ce4",
+    "month": "2026-06",
+    "amount": 84466.0,
+    "isPaid": false,
+    "paidDate": null,
+    "notes": "Điện: 200,000 VNĐ, Nước: 100,000 VNĐ | 29 ngày (02/06/2026 - 30/06/2026)",
+    "createdAt": "2026-06-24T06:40:56.264428",
+    "updatedAt": null
+  }
+]

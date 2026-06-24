@@ -118,5 +118,15 @@
     "notes": "",
     "createdAt": "2026-06-24T04:21:38.718201",
     "updatedAt": null
+  },
+  {
+    "id": "2653440a-f1a1-4cbe-b966-d08c07c52e41",
+    "contractId": "4399db9f-7ece-4938-9d6c-0ad14bdaf7aa",
+    "month": "2026-05",
+    "isCollected": true,
+    "collectionDate": "2026-06-24",
+    "notes": "",
+    "createdAt": "2026-06-24T04:49:31.722426",
+    "updatedAt": null
   }
 ]

@@ -394,6 +394,342 @@ def delete_utility_bill(bill_id: str) -> bool:
     write_data("utility_bills", filtered)
     return True
 
+# Utility Distributions
+def get_utility_distributions(room_id: Optional[str] = None, month: Optional[str] = None) -> List[dict]:
+    """Get utility distributions, optionally filtered by room or month"""
+    distributions = read_data("utility_distributions")
+    if room_id:
+        distributions = [d for d in distributions if d.get("roomId") == room_id]
+    if month:
+        distributions = [d for d in distributions if d["month"] == month]
+    return distributions
+
+def get_utility_distribution_by_id(distribution_id: str) -> Optional[dict]:
+    distributions = get_utility_distributions()
+    return next((d for d in distributions if d["id"] == distribution_id), None)
+
+def create_utility_distribution(distribution: UtilityDistribution) -> dict:
+    distributions = get_utility_distributions()
+    new_dist = distribution.dict()
+    new_dist["id"] = str(uuid.uuid4())
+    new_dist["createdAt"] = datetime.now().isoformat()
+    distributions.append(new_dist)
+    write_data("utility_distributions", distributions)
+    return new_dist
+
+def update_utility_distribution(distribution_id: str, distribution: UtilityDistribution) -> Optional[dict]:
+    distributions = get_utility_distributions()
+    for i, d in enumerate(distributions):
+        if d["id"] == distribution_id:
+            updated = distribution.dict(exclude_unset=True)
+            updated["id"] = distribution_id
+            updated["updatedAt"] = datetime.now().isoformat()
+            distributions[i] = {**d, **updated}
+            write_data("utility_distributions", distributions)
+            return distributions[i]
+    return None
+
+def delete_utility_distribution(distribution_id: str) -> bool:
+    distributions = get_utility_distributions()
+    filtered = [d for d in distributions if d["id"] != distribution_id]
+    if len(filtered) == len(distributions):
+        return False
+    write_data("utility_distributions", filtered)
+    return True
+
+def delete_utility_distributions_by_room_month(room_id: str, month: str) -> bool:
+    """Delete all distributions for a room in a specific month"""
+    distributions = read_data("utility_distributions")
+    filtered = [d for d in distributions if not (d.get("roomId") == room_id and d["month"] == month)]
+    write_data("utility_distributions", filtered)
+    return True
+
+def delete_utility_distributions_by_house_month(house_id: str, month: str) -> bool:
+    """Delete all distributions for a house in a specific month"""
+    distributions = read_data("utility_distributions")
+    filtered = [d for d in distributions if not (d.get("houseId") == house_id and d["month"] == month)]
+    write_data("utility_distributions", filtered)
+    return True
+
+# Utility Distribution Logic
+def get_contracts_by_room_id(room_id: str) -> List[dict]:
+    """Get all contracts that have assignments in a specific room"""
+    beds = get_beds()
+    assignments = get_assignments()
+    contracts = get_contracts()
+    
+    # Get all beds in this room
+    room_beds = [b for b in beds if b["roomId"] == room_id]
+    bed_ids = [b["id"] for b in room_beds]
+    
+    # Get all assignments for these beds
+    room_assignments = [a for a in assignments if a["bedId"] in bed_ids]
+    
+    # Get unique contracts from these assignments
+    contract_ids = list(set([a["contractId"] for a in room_assignments]))
+    room_contracts = [c for c in contracts if c["id"] in contract_ids]
+    
+    return room_contracts
+
+def get_contract_period_in_month(contract: dict, month: str) -> tuple:
+    """
+    Get the actual date range of a contract within a specific month.
+    Returns: (start_date, end_date, num_days) or (None, None, 0) if no overlap
+    """
+    try:
+        from dateutil.relativedelta import relativedelta
+        from datetime import datetime as dt, date
+        
+        # Parse month
+        month_parts = month.split('-')
+        year = int(month_parts[0])
+        month_num = int(month_parts[1])
+        
+        # Get first and last day of the month
+        first_day = date(year, month_num, 1)
+        last_day = (first_day + relativedelta(months=1) - timedelta(days=1))
+        
+        # Parse contract dates
+        start_str = contract["startDate"]
+        if 'T' not in start_str:
+            start_str = start_str + 'T00:00:00'
+        start_str = start_str.replace('Z', '+00:00')
+        contract_start = dt.fromisoformat(start_str).date()
+        
+        end_str = contract["endDate"]
+        if 'T' not in end_str:
+            end_str = end_str + 'T00:00:00'
+        end_str = end_str.replace('Z', '+00:00')
+        contract_end = dt.fromisoformat(end_str).date()
+        
+        # Calculate overlap between contract period and month
+        overlap_start = max(contract_start, first_day)
+        overlap_end = min(contract_end, last_day)
+        
+        # If no overlap, return None
+        if overlap_start > overlap_end:
+            return (None, None, 0)
+        
+        # Calculate days
+        days = (overlap_end - overlap_start).days + 1  # +1 to include both start and end days
+        return (overlap_start, overlap_end, days)
+    except Exception as e:
+        print(f"Error calculating contract period: {e}")
+        return (None, None, 0)
+
+def calculate_contract_days_in_month(contract: dict, month: str) -> int:
+    """
+    Calculate number of days a contract is active in a specific month.
+    Month format: YYYY-MM
+    """
+    _, _, days = get_contract_period_in_month(contract, month)
+    return days
+
+def distribute_utility_cost_to_room(room_id: str, month: str, electricity: float, water: float, house_id: str = None) -> dict:
+    """
+    Distribute electricity and water costs to all contracts in a room for a specific month.
+    
+    Returns:
+        dict with:
+        - success: bool
+        - distributions: list of created distribution records
+        - message: str
+    """
+    try:
+        # Get the room to verify it exists and get house_id if not provided
+        room = get_room_by_id(room_id)
+        if not room:
+            return {"success": False, "message": "Phòng không tìm thấy"}
+        
+        if not house_id:
+            house_id = room["houseId"]
+        
+        # Get all contracts in this room for the month
+        contracts = get_contracts_by_room_id(room_id)
+        if not contracts:
+            return {"success": False, "message": "Không có hợp đồng nào trong phòng này"}
+        
+        # Calculate days for each contract
+        contract_days = {}
+        total_days = 0
+        
+        for contract in contracts:
+            days = calculate_contract_days_in_month(contract, month)
+            if days > 0:
+                contract_days[contract["id"]] = days
+                total_days += days
+        
+        if total_days == 0:
+            return {"success": False, "message": "Không có hợp đồng nào hoạt động trong tháng này"}
+        
+        # Delete existing distributions for this room-month combination
+        delete_utility_distributions_by_room_month(room_id, month)
+        
+        # Distribute costs
+        total_cost = electricity + water
+        distributions = []
+        
+        for contract_id, days in contract_days.items():
+            # Find the contract to get date range
+            contract = next((c for c in contracts if c["id"] == contract_id), None)
+            if not contract:
+                continue
+            
+            # Calculate proportional cost
+            proportion = days / total_days
+            amount = total_cost * proportion
+            
+            # Get the actual date period for this contract in the month
+            start_date, end_date, _ = get_contract_period_in_month(contract, month)
+            
+            # Format date range for notes
+            if start_date and end_date:
+                date_range = f"({start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')})"
+            else:
+                date_range = ""
+            
+            # Create distribution record with detailed notes
+            distribution = UtilityDistribution(
+                roomId=room_id,
+                contractId=contract_id,
+                houseId=house_id,
+                month=month,
+                amount=round(amount, 0),  # Round to nearest VND
+                isPaid=False,
+                notes=f"Điện: {electricity:,.0f} VNĐ, Nước: {water:,.0f} VNĐ | {days} ngày {date_range}"
+            )
+            
+            created = create_utility_distribution(distribution)
+            distributions.append(created)
+        
+        return {
+            "success": True,
+            "message": f"Đã phân bổ chi phí cho {len(distributions)} hợp đồng",
+            "distributions": distributions,
+            "total_cost": total_cost,
+            "total_days": total_days,
+            "contract_days": contract_days
+        }
+    except Exception as e:
+        print(f"Error distributing utility costs: {e}")
+        return {"success": False, "message": f"Lỗi: {str(e)}"}
+
+def distribute_utility_cost_to_house(house_id: str, month: str, electricity: float, water: float) -> dict:
+    """
+    Distribute electricity and water costs to all contracts in all rooms of a house for a specific month.
+    Cost is distributed proportionally based on number of days each contract is active in the month.
+    
+    Returns:
+        dict with:
+        - success: bool
+        - distributions: list of created distribution records
+        - message: str
+        - room_breakdown: dict with room stats
+    """
+    try:
+        # Get the house to verify it exists
+        house = get_house_by_id(house_id)
+        if not house:
+            return {"success": False, "message": "Dome không tìm thấy"}
+        
+        print(f"[DEBUG] House found: {house['name']} (ID: {house_id})")
+        
+        # Get all rooms in this house
+        rooms = get_rooms()
+        house_rooms = [r for r in rooms if r["houseId"] == house_id]
+        if not house_rooms:
+            return {"success": False, "message": "Dome không có phòng nào"}
+        
+        print(f"[DEBUG] Found {len(house_rooms)} rooms in house")
+        
+        # Collect all contracts and their days across all rooms
+        all_contracts = []
+        contract_days = {}
+        room_contracts = {}  # Track which contracts belong to which room
+        total_days = 0
+        
+        for room in house_rooms:
+            room_id = room["id"]
+            room_contracts[room_id] = []
+            print(f"[DEBUG] Processing room: {room['name']}")
+            
+            # Get all contracts in this room
+            contracts = get_contracts_by_room_id(room_id)
+            print(f"[DEBUG] Found {len(contracts)} contracts in room")
+            
+            for contract in contracts:
+                days = calculate_contract_days_in_month(contract, month)
+                print(f"[DEBUG] Contract {contract.get('tenantName', 'N/A')}: {days} days in month {month}")
+                if days > 0:
+                    all_contracts.append((contract, room))
+                    contract_days[contract["id"]] = days
+                    room_contracts[room_id].append((contract["id"], days))
+                    total_days += days
+        
+        print(f"[DEBUG] Total days across all contracts: {total_days}")
+        
+        if total_days == 0:
+            return {"success": False, "message": "Không có hợp đồng nào hoạt động trong tháng này"}
+        
+        # Delete existing distributions for this house-month combination
+        delete_utility_distributions_by_house_month(house_id, month)
+        
+        # Distribute costs
+        total_cost = electricity + water
+        distributions = []
+        room_breakdown = {}
+        
+        for contract, room in all_contracts:
+            days = contract_days[contract["id"]]
+            proportion = days / total_days
+            amount = total_cost * proportion
+            
+            # Get the actual date period for this contract in the month
+            start_date, end_date, _ = get_contract_period_in_month(contract, month)
+            
+            # Format date range for notes
+            if start_date and end_date:
+                date_range = f"({start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')})"
+            else:
+                date_range = ""
+            
+            # Create distribution record with detailed notes
+            distribution = UtilityDistribution(
+                roomId=room["id"],
+                contractId=contract["id"],
+                houseId=house_id,
+                month=month,
+                amount=round(amount, 0),  # Round to nearest VND
+                isPaid=False,
+                notes=f"Điện: {electricity:,.0f} VNĐ, Nước: {water:,.0f} VNĐ | {days} ngày {date_range}"
+            )
+            
+            created = create_utility_distribution(distribution)
+            distributions.append(created)
+            
+            # Track room breakdown
+            if room["id"] not in room_breakdown:
+                room_breakdown[room["id"]] = {
+                    "roomName": room.get("name", "Phòng"),
+                    "totalAmount": 0,
+                    "contractCount": 0
+                }
+            room_breakdown[room["id"]]["totalAmount"] += round(amount, 0)
+            room_breakdown[room["id"]]["contractCount"] += 1
+        
+        return {
+            "success": True,
+            "message": f"Đã phân bổ chi phí cho {len(distributions)} hợp đồng trong {len(house_rooms)} phòng",
+            "distributions": distributions,
+            "total_cost": total_cost,
+            "total_days": total_days,
+            "contract_days": contract_days,
+            "room_breakdown": room_breakdown
+        }
+    except Exception as e:
+        print(f"Error distributing utility costs to house: {e}")
+        return {"success": False, "message": f"Lỗi: {str(e)}"}
+
 # Expenses
 def get_expenses(house_id: Optional[str] = None, month: Optional[str] = None) -> List[dict]:
     """Get expenses, optionally filtered by house or month"""

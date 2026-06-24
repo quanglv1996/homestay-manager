@@ -93,7 +93,8 @@ class UtilityBill(BaseModel):
 class UtilityDistribution(BaseModel):
     """Phân bổ hóa đơn điện nước cho các hợp đồng"""
     id: Optional[str] = None
-    billId: str  # ID hóa đơn điện nước
+    billId: Optional[str] = None  # ID hóa đơn điện nước (có thể None nếu phân bổ trực tiếp từ chi phí house)
+    roomId: Optional[str] = None  # Phòng nào (thêm field này cho thông tin)
     contractId: str  # Hợp đồng nào
     houseId: str  # Dome nào
     month: str  # Tháng (YYYY-MM)
