@@ -19,6 +19,7 @@ FILES = {
     "contracts": DATA_DIR / "contracts.json",
     "assignments": DATA_DIR / "assignments.json",
     "utility_bills": DATA_DIR / "utility_bills.json",
+    "utility_inputs": DATA_DIR / "utility_inputs.json",
     "utility_distributions": DATA_DIR / "utility_distributions.json",
     "expenses": DATA_DIR / "expenses.json",
     "rent_expenses": DATA_DIR / "rent_expenses.json",
@@ -569,8 +570,18 @@ def distribute_utility_cost_to_room(room_id: str, month: str, electricity: float
         total_cost = electricity + water
         distributions = []
         
+        # Get number of days in the month for subsidy calculation
+        from dateutil.relativedelta import relativedelta
+        from datetime import date
+        month_parts = month.split('-')
+        year = int(month_parts[0])
+        month_num = int(month_parts[1])
+        first_day = date(year, month_num, 1)
+        last_day = (first_day + relativedelta(months=1) - timedelta(days=1))
+        days_in_month = (last_day - first_day).days + 1
+        
         for contract_id, days in contract_days.items():
-            # Find the contract to get date range
+            # Find the contract to get date range and subsidy info
             contract = next((c for c in contracts if c["id"] == contract_id), None)
             if not contract:
                 continue
@@ -578,6 +589,14 @@ def distribute_utility_cost_to_room(room_id: str, month: str, electricity: float
             # Calculate proportional cost
             proportion = days / total_days
             amount = total_cost * proportion
+            
+            # Calculate subsidy
+            utility_subsidy = contract.get("utilitySubsidy", 200000)  # Default 200,000 VNĐ/month
+            subsidy_per_day = utility_subsidy / days_in_month
+            subsidy_amount = subsidy_per_day * days
+            
+            # Calculate amount to pay (min 0)
+            amount_to_pay = max(0, amount - subsidy_amount)
             
             # Get the actual date period for this contract in the month
             start_date, end_date, _ = get_contract_period_in_month(contract, month)
@@ -595,6 +614,8 @@ def distribute_utility_cost_to_room(room_id: str, month: str, electricity: float
                 houseId=house_id,
                 month=month,
                 amount=round(amount, 0),  # Round to nearest VND
+                subsidyAmount=round(subsidy_amount, 0),
+                amountToPay=round(amount_to_pay, 0),
                 isPaid=False,
                 notes=f"Điện: {electricity:,.0f} VNĐ, Nước: {water:,.0f} VNĐ | {days} ngày {date_range}"
             )
@@ -613,6 +634,74 @@ def distribute_utility_cost_to_room(room_id: str, month: str, electricity: float
     except Exception as e:
         print(f"Error distributing utility costs: {e}")
         return {"success": False, "message": f"Lỗi: {str(e)}"}
+
+# Utility Inputs - Management functions for electricity/water input data
+def get_utility_inputs() -> List[dict]:
+    """Get all utility inputs"""
+    return read_data("utility_inputs")
+
+def get_utility_inputs_by_house_month(house_id: str, month: str) -> Optional[dict]:
+    """Get utility input for a specific house and month"""
+    inputs = get_utility_inputs()
+    return next((i for i in inputs if i.get("houseId") == house_id and i.get("month") == month), None)
+
+def create_utility_input(house_id: str, month: str, electricity: float, water: float, notes: str = "") -> dict:
+    """Create a new utility input record"""
+    inputs = get_utility_inputs()
+    
+    # Check if input already exists for this house-month, if so delete it first
+    existing = get_utility_inputs_by_house_month(house_id, month)
+    if existing:
+        inputs = [i for i in inputs if i["id"] != existing["id"]]
+    
+    new_input = {
+        "id": str(uuid.uuid4()),
+        "houseId": house_id,
+        "month": month,
+        "electricity": electricity,
+        "water": water,
+        "notes": notes,
+        "createdAt": datetime.now().isoformat(),
+        "updatedAt": datetime.now().isoformat()
+    }
+    inputs.append(new_input)
+    write_data("utility_inputs", inputs)
+    return new_input
+
+def update_utility_input(input_id: str, house_id: str, month: str, electricity: float, water: float, notes: str = "") -> Optional[dict]:
+    """Update an existing utility input record"""
+    inputs = get_utility_inputs()
+    
+    for i, input_record in enumerate(inputs):
+        if input_record["id"] == input_id:
+            input_record["houseId"] = house_id
+            input_record["month"] = month
+            input_record["electricity"] = electricity
+            input_record["water"] = water
+            input_record["notes"] = notes
+            input_record["updatedAt"] = datetime.now().isoformat()
+            write_data("utility_inputs", inputs)
+            return input_record
+    
+    return None
+
+def delete_utility_input(input_id: str) -> bool:
+    """Delete utility input and cascade delete all associated distributions"""
+    inputs = get_utility_inputs()
+    input_to_delete = next((i for i in inputs if i["id"] == input_id), None)
+    
+    if not input_to_delete:
+        return False
+    
+    # Delete all distributions created from this input
+    distributions = get_utility_distributions()
+    new_distributions = [d for d in distributions if d.get("inputId") != input_id]
+    write_data("utility_distributions", new_distributions)
+    
+    # Delete the input
+    inputs = [i for i in inputs if i["id"] != input_id]
+    write_data("utility_inputs", inputs)
+    return True
 
 def distribute_utility_cost_to_house(house_id: str, month: str, electricity: float, water: float) -> dict:
     """
@@ -671,6 +760,16 @@ def distribute_utility_cost_to_house(house_id: str, month: str, electricity: flo
         if total_days == 0:
             return {"success": False, "message": "Không có hợp đồng nào hoạt động trong tháng này"}
         
+        # Create or update UtilityInput record
+        utility_input = create_utility_input(
+            house_id=house_id,
+            month=month,
+            electricity=electricity,
+            water=water,
+            notes=f"Điện: {electricity:,.0f} VNĐ, Nước: {water:,.0f} VNĐ"
+        )
+        input_id = utility_input["id"]
+        
         # Delete existing distributions for this house-month combination
         delete_utility_distributions_by_house_month(house_id, month)
         
@@ -679,10 +778,28 @@ def distribute_utility_cost_to_house(house_id: str, month: str, electricity: flo
         distributions = []
         room_breakdown = {}
         
+        # Get number of days in the month for subsidy calculation
+        from dateutil.relativedelta import relativedelta
+        from datetime import date
+        month_parts = month.split('-')
+        year = int(month_parts[0])
+        month_num = int(month_parts[1])
+        first_day = date(year, month_num, 1)
+        last_day = (first_day + relativedelta(months=1) - timedelta(days=1))
+        days_in_month = (last_day - first_day).days + 1
+        
         for contract, room in all_contracts:
             days = contract_days[contract["id"]]
             proportion = days / total_days
             amount = total_cost * proportion
+            
+            # Calculate subsidy
+            utility_subsidy = contract.get("utilitySubsidy", 200000)  # Default 200,000 VNĐ/month
+            subsidy_per_day = utility_subsidy / days_in_month
+            subsidy_amount = subsidy_per_day * days
+            
+            # Calculate amount to pay (min 0)
+            amount_to_pay = max(0, amount - subsidy_amount)
             
             # Get the actual date period for this contract in the month
             start_date, end_date, _ = get_contract_period_in_month(contract, month)
@@ -695,11 +812,14 @@ def distribute_utility_cost_to_house(house_id: str, month: str, electricity: flo
             
             # Create distribution record with detailed notes
             distribution = UtilityDistribution(
+                inputId=input_id,
                 roomId=room["id"],
                 contractId=contract["id"],
                 houseId=house_id,
                 month=month,
                 amount=round(amount, 0),  # Round to nearest VND
+                subsidyAmount=round(subsidy_amount, 0),
+                amountToPay=round(amount_to_pay, 0),
                 isPaid=False,
                 notes=f"Điện: {electricity:,.0f} VNĐ, Nước: {water:,.0f} VNĐ | {days} ngày {date_range}"
             )
@@ -777,20 +897,20 @@ def delete_expense(expense_id: str) -> bool:
 def get_revenue_stats(month: str) -> dict:
     """
     Calculate revenue statistics for a specific month (YYYY-MM)
-    Revenue = Actual RentCollections by collection date (tiền thu được trong tháng)
+    Revenue = Actual RentCollections by collection date + Utility bills to pay for paid items
     Projected Revenue = Active contract fees (tiền dự kiến)
     Expenses = Regular expenses + Rent expenses
-    Net Revenue = Actual Revenue + Utility bills paid - Expenses
+    Net Revenue = Total Revenue - Expenses
     
-    NOTE: Revenue is now calculated based on collectionDate (when money was actually collected),
-    not the rent month. So if someone collects rent for months 10, 11, 12 in October, 
-    all three payments count as October revenue.
+    NOTE: Revenue is calculated based on collectionDate/paidDate (when money was actually collected),
+    not the rent month. Utility bills are only counted if they have been marked as paid (isPaid=true).
     """
     contracts = get_contracts()
     assignments = get_assignments()
     # Get collections by collection date month, not rent month
     rent_collections = get_rent_collections_by_collection_date(month)
-    utility_bills = get_utility_bills(month=month)
+    # Get utility distributions
+    all_utility_distributions = get_utility_distributions()
     expenses = get_expenses(month=month)
     rent_expenses = get_rent_expenses(month=month)
     
@@ -815,23 +935,31 @@ def get_revenue_stats(month: str) -> dict:
             if contract.get("hasParking") and contract.get("parkingInfo"):
                 projected_revenue += contract["parkingInfo"]["parkingFee"]
     
-    # Calculate total utility bills collected
-    total_utility_bills = sum(b["amount"] for b in utility_bills if b.get("isPaid"))
+    # Calculate total utility bills (amountToPay) - ONLY for items marked as paid (isPaid=true)
+    total_utility_bills = 0.0
+    for dist in all_utility_distributions:
+        # Only count utility bills that have been paid
+        if dist.get("isPaid") and dist.get("month") == month:
+            # Use amountToPay (accounts for subsidies)
+            amount_to_use = dist.get("amountToPay", dist.get("amount", 0))
+            total_utility_bills += amount_to_use
+    
+    # Add utility bills to total revenue
+    total_revenue += total_utility_bills
     
     # Calculate total expenses (Khoản chi + Khoản chi tiêu thuê nhà)
     total_expenses = sum(e["amount"] for e in expenses)
     total_rent_expenses = sum(r["amount"] for r in rent_expenses)
     total_expenses += total_rent_expenses
     
-    # Net revenue = actual revenue + utility bills - expenses
-    net_revenue = total_revenue + total_utility_bills - total_expenses
+    # Net revenue = total revenue (including utilities) - expenses
+    net_revenue = total_revenue - total_expenses
     
     return {
         "month": month,
         "totalRevenue": total_revenue,
         "projectedRevenue": projected_revenue,
         "totalExpenses": total_expenses,
-        "totalUtilityBills": total_utility_bills,
         "netRevenue": net_revenue
     }
 
@@ -842,6 +970,7 @@ def get_revenue_stats_by_dome(month: str) -> List[dict]:
     Returns list of domes with their respective revenue stats
     
     NOTE: Collections are grouped by collectionDate month, not rent month
+    Utility bills are grouped by paidDate month, not bill month
     """
     houses = get_houses()
     rooms = get_rooms()
@@ -850,7 +979,8 @@ def get_revenue_stats_by_dome(month: str) -> List[dict]:
     contracts = get_contracts()
     # Get collections by collection date month, not rent month
     rent_collections = get_rent_collections_by_collection_date(month)
-    utility_bills = get_utility_bills(month=month)
+    # Get all utility distributions for filtering by paidDate
+    all_utility_distributions = get_utility_distributions()
     expenses = get_expenses(month=month)
     rent_expenses = get_rent_expenses(month=month)
     
@@ -879,8 +1009,13 @@ def get_revenue_stats_by_dome(month: str) -> List[dict]:
                         if contract.get("hasParking") and contract.get("parkingInfo"):
                             house_revenue += contract["parkingInfo"]["parkingFee"]
         
-        # Calculate utility bills for this house
-        house_utility_bills = sum(b["amount"] for b in utility_bills if b.get("houseId") == house["id"] and b.get("isPaid"))
+        # Calculate utility bills for this house (ONLY for paid items)
+        house_utility_bills = 0.0
+        for dist in all_utility_distributions:
+            if dist.get("isPaid") and dist.get("houseId") == house["id"] and dist.get("month") == month:
+                # Use amountToPay (accounts for subsidies), otherwise use amount
+                amount_to_use = dist.get("amountToPay", dist.get("amount", 0))
+                house_utility_bills += amount_to_use
         
         # Calculate expenses for this house
         house_expenses = sum(e["amount"] for e in expenses if e.get("houseId") == house["id"])
@@ -890,15 +1025,17 @@ def get_revenue_stats_by_dome(month: str) -> List[dict]:
         
         total_house_expenses = house_expenses + house_rent_expenses
         
-        # Net revenue for this house
+        # Net revenue = total revenue (including paid utilities) - expenses
         house_net_revenue = house_revenue + house_utility_bills - total_house_expenses
+        
+        # Add utility bills to house revenue
+        house_revenue += house_utility_bills
         
         dome_stats.append({
             "houseId": house["id"],
             "houseName": house["name"],
             "totalRevenue": house_revenue,
             "totalExpenses": total_house_expenses,
-            "totalUtilityBills": house_utility_bills,
             "netRevenue": house_net_revenue
         })
     

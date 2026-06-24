@@ -1,1 +1,35 @@
-[]
+[
+  {
+    "id": "d0e8d2cf-b7ba-43be-bf60-eab90f88538b",
+    "description": "Sửa điều hòa",
+    "amount": 500000.0,
+    "date": "2026-06-24",
+    "category": "Sửa chữa",
+    "houseId": "2c6c2263-b72c-4f96-b225-254a756f9ce4",
+    "notes": "aaaa",
+    "createdAt": "2026-06-24T08:03:46.541425",
+    "updatedAt": null
+  },
+  {
+    "id": "37ee05e1-7255-4150-bba4-6fdf406e7539",
+    "description": "Mua chăn ga",
+    "amount": 1500000.0,
+    "date": "2026-06-24",
+    "category": "Mua sắm",
+    "houseId": null,
+    "notes": "",
+    "createdAt": "2026-06-24T08:04:03.029783",
+    "updatedAt": null
+  },
+  {
+    "id": "1b146862-71bf-459f-9bb9-b2de42ae6c44",
+    "description": "Gối",
+    "amount": 750000.0,
+    "date": "2026-06-24",
+    "category": "Bảo trì",
+    "houseId": null,
+    "notes": "",
+    "createdAt": "2026-06-24T08:04:23.836702",
+    "updatedAt": null
+  }
+]

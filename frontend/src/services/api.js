@@ -79,5 +79,6 @@ export const deleteRentCollection = (id) => api.delete(`/rent-collections/${id}`
 // Revenue Statistics
 export const getRevenueStats = (month) => api.get('/dashboard/revenue', { params: { month } });
 export const getRevenueStatsByDome = (month) => api.get('/dashboard/revenue-by-dome', { params: { month } });
+export const getRevenueHistory = (months = 12, houseId = null) => api.get('/dashboard/revenue-history', { params: { months, house_id: houseId } });
 
 export default api;

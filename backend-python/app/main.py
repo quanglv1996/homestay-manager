@@ -4,8 +4,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from typing import Optional, List
 
-from app.models import House, Room, Bed, Contract, Assignment, UtilityBill, UtilityDistribution, Expense, RentExpense, RentCollection
+from app.models import House, Room, Bed, Contract, Assignment, UtilityBill, UtilityDistribution, Expense, RentExpense, RentCollection, UtilityInput
 from app import data_service
+from app import revenue_service
 
 app = FastAPI(title="Dome Homestay Manager API")
 
@@ -278,7 +279,8 @@ def distribute_utility_by_house(house_id: str, electricity: float = Query(...), 
     return result
 
 @app.put("/api/utility-distributions/{distribution_id}")
-def update_utility_distribution(distribution_id: str, distribution: UtilityDistribution):
+def update_utility_distribution(distribution_id: str, distribution: UtilityDistribution, password: str = Query(None)):
+    """Update utility distribution. Password not required for toggle payment status."""
     from app.models import UtilityDistribution
     updated = data_service.update_utility_distribution(distribution_id, distribution)
     if not updated:
@@ -286,10 +288,60 @@ def update_utility_distribution(distribution_id: str, distribution: UtilityDistr
     return updated
 
 @app.delete("/api/utility-distributions/{distribution_id}", status_code=204)
-def delete_utility_distribution(distribution_id: str):
+def delete_utility_distribution(distribution_id: str, password: str = Query(...)):
+    """Delete utility distribution. Requires password."""
+    # Verify password
+    if password != "quang@2305":
+        raise HTTPException(status_code=403, detail="Mật khẩu không chính xác")
+    
     if not data_service.delete_utility_distribution(distribution_id):
         raise HTTPException(status_code=404, detail="Utility distribution not found")
     return None
+
+# Utility Inputs
+@app.get("/api/utility-inputs")
+def get_utility_inputs():
+    """Get all utility input records"""
+    return data_service.get_utility_inputs()
+
+@app.get("/api/utility-inputs/{house_id}/{month}")
+def get_utility_input(house_id: str, month: str):
+    """Get utility input for a specific house and month"""
+    result = data_service.get_utility_inputs_by_house_month(house_id, month)
+    if not result:
+        raise HTTPException(status_code=404, detail="Utility input not found")
+    return result
+
+@app.put("/api/utility-inputs/{input_id}")
+def update_utility_input(input_id: str, data: UtilityInput, password: str = Query(...)):
+    """Update utility input. Requires password."""
+    # Verify password
+    if password != "quang@2305":
+        raise HTTPException(status_code=403, detail="Mật khẩu không chính xác")
+    
+    result = data_service.update_utility_input(
+        input_id,
+        data.houseId,
+        data.month,
+        data.electricity,
+        data.water,
+        data.notes or ""
+    )
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="Utility input not found")
+    return result
+
+@app.delete("/api/utility-inputs/{input_id}")
+def delete_utility_input(input_id: str, password: str = Query(...)):
+    """Delete utility input and cascade delete all associated distributions. Requires password."""
+    # Verify password
+    if password != "quang@2305":
+        raise HTTPException(status_code=403, detail="Mật khẩu không chính xác")
+    
+    if not data_service.delete_utility_input(input_id):
+        raise HTTPException(status_code=404, detail="Utility input not found")
+    return {"success": True, "message": "Đã xóa thông tin nhập tính toán và các hóa đơn liên quan"}
 
 # Expenses
 @app.get("/api/expenses")
@@ -361,3 +413,9 @@ def get_revenue_stats(month: str = Query(..., description="Month in YYYY-MM form
 def get_revenue_stats_by_dome(month: str = Query(..., description="Month in YYYY-MM format")):
     """Get revenue statistics for each dome in a specific month"""
     return data_service.get_revenue_stats_by_dome(month)
+
+@app.get("/api/dashboard/revenue-history")
+def get_revenue_history(months: int = Query(12, description="Number of months to retrieve"), 
+                        house_id: str = Query(None, description="Optional house ID to filter by")):
+    """Get revenue statistics for the last N months, optionally filtered by house"""
+    return revenue_service.get_revenue_history(months_count=months, house_id=house_id)

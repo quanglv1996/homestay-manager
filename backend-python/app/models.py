@@ -56,6 +56,7 @@ class Contract(BaseModel):
     parkingInfo: Optional[ParkingInfo] = None  # Thông tin gửi xe
     notes: Optional[str] = ""
     status: Optional[str] = "active"
+    utilitySubsidy: Optional[float] = 200000  # Mức hỗ trợ điện nước/tháng (mặc định 200.000 VNĐ)
     extensionHistory: Optional[List[ExtensionRecord]] = []  # Lịch sử gia hạn
     password: Optional[str] = None  # For API validation (not stored)
     createdAt: Optional[str] = None
@@ -78,6 +79,17 @@ class Assignment(BaseModel):
     level: str  # "top" or "bottom"
     createdAt: Optional[str] = None
 
+class UtilityInput(BaseModel):
+    """Thông tin nhập tính toán phí điện nước"""
+    id: Optional[str] = None
+    houseId: str  # Dome nào
+    month: str  # Tháng (YYYY-MM)
+    electricity: float  # Tiền điện
+    water: float  # Tiền nước
+    notes: Optional[str] = ""
+    createdAt: Optional[str] = None
+    updatedAt: Optional[str] = None
+
 class UtilityBill(BaseModel):
     """Hóa đơn điện nước phát sinh theo tháng"""
     id: Optional[str] = None
@@ -93,12 +105,15 @@ class UtilityBill(BaseModel):
 class UtilityDistribution(BaseModel):
     """Phân bổ hóa đơn điện nước cho các hợp đồng"""
     id: Optional[str] = None
+    inputId: Optional[str] = None  # ID thông tin nhập (để theo dõi source)
     billId: Optional[str] = None  # ID hóa đơn điện nước (có thể None nếu phân bổ trực tiếp từ chi phí house)
     roomId: Optional[str] = None  # Phòng nào (thêm field này cho thông tin)
     contractId: str  # Hợp đồng nào
     houseId: str  # Dome nào
     month: str  # Tháng (YYYY-MM)
     amount: float  # Số tiền phân bổ cho hợp đồng này
+    subsidyAmount: Optional[float] = 0  # Số tiền hỗ trợ điện nước
+    amountToPay: Optional[float] = 0  # Số tiền phải đóng = amount - subsidyAmount (min 0)
     isPaid: Optional[bool] = False  # Đã thanh toán hay chưa
     paidDate: Optional[str] = None  # Ngày thanh toán
     notes: Optional[str] = ""

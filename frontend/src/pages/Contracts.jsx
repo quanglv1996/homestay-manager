@@ -34,7 +34,8 @@ function Contracts() {
     hasParking: false,
     parkingInfo: null,
     notes: '',
-    status: 'active'
+    status: 'active',
+    utilitySubsidy: 200000
   });
   const [newEquipment, setNewEquipment] = useState('');
   const [newImageUrl, setNewImageUrl] = useState('');
@@ -155,7 +156,8 @@ function Contracts() {
       deposit: contract.deposit || contract.price,
       equipment: contract.equipment || [],
       notes: contract.notes || '',
-      status: contract.status
+      status: contract.status,
+      utilitySubsidy: contract.utilitySubsidy || 200000
     });
     setShowModal(true);
   };
@@ -1225,6 +1227,18 @@ function Contracts() {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label>Mức hỗ trợ điện nước/tháng (VNĐ)</label>
+                <input
+                  type="number"
+                  value={formData.utilitySubsidy}
+                  onChange={(e) => setFormData({ ...formData, utilitySubsidy: parseFloat(e.target.value) || 0 })}
+                  placeholder="Ví dụ: 200000"
+                  min="0"
+                />
+                <small style={{ color: '#666' }}>Mỗi ngày sẽ hỗ trợ = Mức hỗ trợ / số ngày trong tháng × số ngày ở</small>
               </div>
 
               <div className="form-group">
