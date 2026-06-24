@@ -40,5 +40,75 @@
     "status": "active",
     "createdAt": "2026-06-23T09:17:28.715721",
     "updatedAt": "2026-06-23T09:18:15.287464"
+  },
+  {
+    "id": "cfd0f979-fd1d-4c7c-8f43-d8ca07cfab28",
+    "tenantName": "C",
+    "tenantPhone": "1",
+    "tenantEmail": "no_email@gmail.com",
+    "tenantIdCard": "1",
+    "startDate": "2026-06-24",
+    "endDate": "2026-06-26",
+    "price": 1500000.0,
+    "equipment": [
+      "Chăn",
+      "Ga",
+      "Vỏ gối",
+      "Ruột gối",
+      "Chìa khóa tủ",
+      "Chìa khóa nhà"
+    ],
+    "images": [],
+    "hasParking": false,
+    "parkingInfo": null,
+    "notes": "",
+    "status": "active",
+    "createdAt": "2026-06-24T01:59:25.389916",
+    "updatedAt": null
+  },
+  {
+    "id": "0fff2f85-433d-45c2-b061-ad6e88b86bb6",
+    "tenantName": "D",
+    "tenantPhone": "1",
+    "tenantEmail": "no_email@gmail.com",
+    "tenantIdCard": "1",
+    "startDate": "2026-06-02",
+    "endDate": "2026-06-11",
+    "price": 1499996.0,
+    "equipment": [
+      "Chăn",
+      "Ga",
+      "Vỏ gối",
+      "Ruột gối",
+      "Chìa khóa tủ",
+      "Chìa khóa nhà"
+    ],
+    "images": [],
+    "hasParking": false,
+    "parkingInfo": null,
+    "notes": "",
+    "status": "active",
+    "createdAt": "2026-06-24T02:00:12.384340",
+    "updatedAt": null
+  },
+  {
+    "id": "4399db9f-7ece-4938-9d6c-0ad14bdaf7aa",
+    "tenantName": "E",
+    "tenantPhone": "1",
+    "tenantEmail": "no_email@gmail.com",
+    "tenantIdCard": "1",
+    "startDate": "2026-06-02",
+    "endDate": "2026-06-10",
+    "price": 1000000.0,
+    "equipment": [
+      "Chăn"
+    ],
+    "images": [],
+    "hasParking": false,
+    "parkingInfo": null,
+    "notes": "",
+    "status": "active",
+    "createdAt": "2026-06-24T02:01:56.869465",
+    "updatedAt": null
   }
 ]

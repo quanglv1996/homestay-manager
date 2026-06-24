@@ -15,6 +15,7 @@ function Contracts() {
   const [sortBy, setSortBy] = useState('tenantName'); // 'tenantName', 'startDate', 'price', 'dome'
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc', 'desc'
   const [filterByDome, setFilterByDome] = useState(''); // empty = all domes
+  const [filterByStatus, setFilterByStatus] = useState('all'); // 'all', 'expiring', 'active'
   const [formData, setFormData] = useState({
     tenantName: '',
     tenantPhone: '',
@@ -241,6 +242,21 @@ function Contracts() {
     return total;
   };
 
+  // Check if contract is expiring (within 30 days from now)
+  const isContractExpiring = (endDate) => {
+    const end = new Date(endDate);
+    const today = new Date();
+    const daysLeft = Math.floor((end - today) / (1000 * 60 * 60 * 24));
+    return daysLeft > 0 && daysLeft <= 30;
+  };
+
+  // Get days until expiry
+  const getDaysUntilExpiry = (endDate) => {
+    const end = new Date(endDate);
+    const today = new Date();
+    return Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+  };
+
   if (loading) {
     return <div className="loading">Đang tải dữ liệu...</div>;
   }
@@ -268,6 +284,13 @@ function Contracts() {
         return contract.assignments && 
                contract.assignments.some(a => a.houseName === filterByDome);
       });
+    }
+
+    // Apply status filter
+    if (filterByStatus === 'expiring') {
+      filtered = filtered.filter(contract => isContractExpiring(contract.endDate));
+    } else if (filterByStatus === 'active') {
+      filtered = filtered.filter(contract => !isContractExpiring(contract.endDate));
     }
 
     // Apply sorting
@@ -376,12 +399,34 @@ function Contracts() {
           </select>
         </div>
 
+        <div>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#2d3748' }}>
+            Trạng thái:
+          </label>
+          <select 
+            value={filterByStatus}
+            onChange={(e) => setFilterByStatus(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.5rem',
+              border: '1px solid #cbd5e0',
+              borderRadius: '6px',
+              fontSize: '0.9rem'
+            }}
+          >
+            <option value="all">Tất cả hợp đồng</option>
+            <option value="active">Còn hoạt động</option>
+            <option value="expiring">Sắp hết hạn (≤30 ngày)</option>
+          </select>
+        </div>
+
         <div style={{ display: 'flex', alignItems: 'flex-end' }}>
           <button 
             onClick={() => {
               setSortBy('tenantName');
               setSortOrder('asc');
               setFilterByDome('');
+              setFilterByStatus('all');
             }}
             style={{
               width: '100%',
@@ -444,6 +489,19 @@ function Contracts() {
                   <strong>Đến ngày:</strong> {new Date(contract.endDate).toLocaleDateString('vi-VN')}
                 </div>
               </div>
+
+              {isContractExpiring(contract.endDate) && (
+                <div style={{
+                  marginTop: '1rem',
+                  padding: '0.75rem',
+                  background: '#fed7d7',
+                  border: '2px solid #fc8181',
+                  borderRadius: '6px',
+                  color: '#c53030'
+                }}>
+                  ⏰ <strong>Sắp hết hạn:</strong> Còn {getDaysUntilExpiry(contract.endDate)} ngày
+                </div>
+              )}
               
               {contract.images && contract.images.length > 0 && (
                 <div style={{ marginTop: '1rem' }}>

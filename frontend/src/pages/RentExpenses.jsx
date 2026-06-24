@@ -132,17 +132,6 @@ function RentExpenses() {
     return houses.find(h => h.id === houseId);
   };
 
-  const getFilteredRents = () => {
-    let filtered = rentExpenses;
-    if (filterMonth) {
-      filtered = filtered.filter(r => r.month === filterMonth);
-    }
-    if (filterHouse) {
-      filtered = filtered.filter(r => r.houseId === filterHouse);
-    }
-    return filtered.sort((a, b) => b.month.localeCompare(a.month));
-  };
-
   const getTotalRents = (rentList = rentExpenses) => {
     return rentList.reduce((sum, r) => sum + r.amount, 0);
   };
@@ -170,6 +159,34 @@ function RentExpenses() {
       }
     });
     return stats;
+  };
+
+  const getDomeRentsByMonth = (month) => {
+    let filtered = rentExpenses;
+    if (month) {
+      filtered = filtered.filter(r => r.month === month);
+    }
+    
+    // Group by houseId
+    const grouped = {};
+    filtered.forEach(rent => {
+      if (!grouped[rent.houseId]) {
+        grouped[rent.houseId] = [];
+      }
+      grouped[rent.houseId].push(rent);
+    });
+    return grouped;
+  };
+
+  const getFilteredRents = () => {
+    let filtered = rentExpenses;
+    if (filterMonth) {
+      filtered = filtered.filter(r => r.month === filterMonth);
+    }
+    if (filterHouse) {
+      filtered = filtered.filter(r => r.houseId === filterHouse);
+    }
+    return filtered.sort((a, b) => b.month.localeCompare(a.month));
   };
 
   if (loading) {
@@ -291,9 +308,52 @@ function RentExpenses() {
               {getTotalRents(filteredRents).toLocaleString('vi-VN')} VNĐ
             </span>
           </div>
-          
-          <div className="contract-list">
-            {filteredRents.map(rent => {
+
+          {filterMonth ? (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+              }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
+                    <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Dome</th>
+                    <th style={{ padding: '1rem', textAlign: 'right', fontWeight: '600', color: '#374151' }}>Tổng chi</th>
+                    <th style={{ padding: '1rem', textAlign: 'right', fontWeight: '600', color: '#374151' }}>Đã thanh toán</th>
+                    <th style={{ padding: '1rem', textAlign: 'right', fontWeight: '600', color: '#374151' }}>Chưa thanh toán</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {houses.map((house, index) => {
+                    const houseRents = getDomeRentsByMonth(filterMonth)[house.id] || [];
+                    if (houseRents.length === 0) return null;
+                    const total = getTotalRents(houseRents);
+                    const paid = getTotalPaid(houseRents);
+                    const unpaid = getTotalUnpaid(houseRents);
+                    return (
+                      <tr key={house.id} style={{ borderBottom: '1px solid #e5e7eb', backgroundColor: index % 2 === 0 ? 'white' : '#f9fafb' }}>
+                        <td style={{ padding: '1rem', fontWeight: '600', color: '#2d3748' }}>{house.name}</td>
+                        <td style={{ padding: '1rem', textAlign: 'right', color: '#1f2937', fontWeight: '600' }}>
+                          {total.toLocaleString('vi-VN')} ₫
+                        </td>
+                        <td style={{ padding: '1rem', textAlign: 'right', color: '#16a34a', fontWeight: '600' }}>
+                          {paid.toLocaleString('vi-VN')} ₫
+                        </td>
+                        <td style={{ padding: '1rem', textAlign: 'right', color: '#ca8a04', fontWeight: '600' }}>
+                          {unpaid.toLocaleString('vi-VN')} ₫
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="contract-list">
+              {filteredRents.map(rent => {
               const house = getHouse(rent.houseId);
               const monthDate = new Date(rent.month + '-01');
               const monthStr = monthDate.toLocaleDateString('vi-VN', { year: 'numeric', month: 'long' });
@@ -364,7 +424,8 @@ function RentExpenses() {
                 </div>
               );
             })}
-          </div>
+            </div>
+          )}
         </div>
       )}
 

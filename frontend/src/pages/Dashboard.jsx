@@ -8,6 +8,7 @@ function Dashboard() {
   const [rooms, setRooms] = useState([]);
   const [beds, setBeds] = useState([]);
   const [assignments, setAssignments] = useState([]);
+  const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [revenueStats, setRevenueStats] = useState(null);
   const [revenueStatsByDome, setRevenueStatsByDome] = useState([]);
@@ -29,12 +30,13 @@ function Dashboard() {
 
   const loadData = async () => {
     try {
-      const [statsRes, housesRes, roomsRes, bedsRes, assignmentsRes] = await Promise.all([
+      const [statsRes, housesRes, roomsRes, bedsRes, assignmentsRes, contractsRes] = await Promise.all([
         getDashboardStats(),
         getHouses(),
         getRooms(),
         getBeds(),
-        getAssignments()
+        getAssignments(),
+        getContracts()
       ]);
 
       setStats(statsRes.data);
@@ -42,6 +44,7 @@ function Dashboard() {
       setRooms(roomsRes.data);
       setBeds(bedsRes.data);
       setAssignments(assignmentsRes.data);
+      setContracts(contractsRes.data);
       setLoading(false);
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -78,6 +81,30 @@ function Dashboard() {
       occupiedPositions,
       availablePositions: totalPositions - occupiedPositions
     };
+  };
+
+  // Helper functions for contract status
+  const getDaysUntilExpiry = (endDate) => {
+    const end = new Date(endDate);
+    const today = new Date();
+    return Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+  };
+
+  const isContractExpiring = (endDate) => {
+    const daysLeft = getDaysUntilExpiry(endDate);
+    return daysLeft > 0 && daysLeft <= 30;
+  };
+
+  const isContractOverdue = (endDate) => {
+    return getDaysUntilExpiry(endDate) < 0;
+  };
+
+  const getExpiringContracts = () => {
+    return contracts.filter(c => isContractExpiring(c.endDate));
+  };
+
+  const getOverdueContracts = () => {
+    return contracts.filter(c => isContractOverdue(c.endDate));
   };
 
   if (loading) {
@@ -131,11 +158,17 @@ function Dashboard() {
         </div>
         
         {revenueStats && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
             <div style={{ padding: '1rem', background: '#e6fffa', borderRadius: '8px', border: '2px solid #38b2ac' }}>
-              <div style={{ fontSize: '0.85rem', color: '#234e52', marginBottom: '0.5rem' }}>Tổng thu (Hợp đồng)</div>
+              <div style={{ fontSize: '0.85rem', color: '#234e52', marginBottom: '0.5rem' }}>💰 Tổng thu (Đã thu được)</div>
               <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#234e52' }}>
                 {revenueStats.totalRevenue.toLocaleString('vi-VN')} VNĐ
+              </div>
+            </div>
+            <div style={{ padding: '1rem', background: '#fef3c7', borderRadius: '8px', border: '2px solid #f59e0b' }}>
+              <div style={{ fontSize: '0.85rem', color: '#78350f', marginBottom: '0.5rem' }}>📈 Tổng thu dự kiến</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#78350f' }}>
+                {revenueStats.projectedRevenue.toLocaleString('vi-VN')} VNĐ
               </div>
             </div>
             <div style={{ padding: '1rem', background: '#e6ffed', borderRadius: '8px', border: '2px solid #48bb78' }}>
@@ -154,7 +187,8 @@ function Dashboard() {
               padding: '1rem', 
               background: revenueStats.netRevenue >= 0 ? '#f0fff4' : '#fff5f5', 
               borderRadius: '8px', 
-              border: revenueStats.netRevenue >= 0 ? '3px solid #48bb78' : '3px solid #e53e3e' 
+              border: revenueStats.netRevenue >= 0 ? '3px solid #48bb78' : '3px solid #e53e3e',
+              gridColumn: 'span auto'
             }}>
               <div style={{ fontSize: '0.85rem', color: revenueStats.netRevenue >= 0 ? '#22543d' : '#742a2a', marginBottom: '0.5rem' }}>
                 💰 Doanh thu thuần
@@ -163,7 +197,7 @@ function Dashboard() {
                 {revenueStats.netRevenue.toLocaleString('vi-VN')} VNĐ
               </div>
               <div style={{ fontSize: '0.75rem', color: '#718096', marginTop: '0.25rem' }}>
-                = Thu + Điện nước - Chi
+                = Thu thực tế + Điện nước - Chi
               </div>
             </div>
           </div>
@@ -218,6 +252,76 @@ function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Contract Status Sections */}
+      <div style={{ marginTop: '2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+        {/* Expiring Contracts */}
+        <div style={{ padding: '1.5rem', background: 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: '2px solid #fed7d7' }}>
+          <h3 style={{ fontSize: '1.2rem', color: '#c53030', marginBottom: '1rem' }}>⏰ Hợp đồng sắp hết hạn</h3>
+          {getExpiringContracts().length === 0 ? (
+            <p style={{ color: '#666', fontSize: '0.9rem' }}>Không có hợp đồng sắp hết hạn</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {getExpiringContracts().slice(0, 5).map(contract => (
+                <div key={contract.id} style={{ padding: '0.75rem', background: '#fff5f5', borderRadius: '6px', borderLeft: '4px solid #ed8936' }}>
+                  <div style={{ fontWeight: '600', color: '#744210' }}>{contract.tenantName}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#c53030', marginTop: '0.25rem' }}>
+                    Còn {getDaysUntilExpiry(contract.endDate)} ngày • Hết hạn: {new Date(contract.endDate).toLocaleDateString('vi-VN')}
+                  </div>
+                </div>
+              ))}
+              {getExpiringContracts().length > 5 && (
+                <div style={{ fontSize: '0.85rem', color: '#666', textAlign: 'center', marginTop: '0.5rem' }}>
+                  ... và {getExpiringContracts().length - 5} hợp đồng khác
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Overdue Contracts */}
+        <div style={{ padding: '1.5rem', background: 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: '2px solid #fed7d7' }}>
+          <h3 style={{ fontSize: '1.2rem', color: '#742a2a', marginBottom: '1rem' }}>⛔ Hợp đồng quá hạn</h3>
+          {getOverdueContracts().length === 0 ? (
+            <p style={{ color: '#666', fontSize: '0.9rem' }}>Không có hợp đồng quá hạn</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {getOverdueContracts().slice(0, 5).map(contract => (
+                <div key={contract.id} style={{ padding: '0.75rem', background: '#fff5f5', borderRadius: '6px', borderLeft: '4px solid #f56565' }}>
+                  <div style={{ fontWeight: '600', color: '#742a2a' }}>{contract.tenantName}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#c53030', marginTop: '0.25rem' }}>
+                    Quá hạn {Math.abs(getDaysUntilExpiry(contract.endDate))} ngày • Hết hạn: {new Date(contract.endDate).toLocaleDateString('vi-VN')}
+                  </div>
+                </div>
+              ))}
+              {getOverdueContracts().length > 5 && (
+                <div style={{ fontSize: '0.85rem', color: '#666', textAlign: 'center', marginTop: '0.5rem' }}>
+                  ... và {getOverdueContracts().length - 5} hợp đồng khác
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Summary */}
+        <div style={{ padding: '1.5rem', background: 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: '2px solid #e2e8f0' }}>
+          <h3 style={{ fontSize: '1.2rem', color: '#2d3748', marginBottom: '1rem' }}>📋 Tóm tắt hợp đồng</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.95rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Tổng hợp đồng:</span>
+              <span style={{ fontWeight: '600', color: '#667eea' }}>{contracts.length}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
+              <span>Sắp hết hạn (≤30 ngày):</span>
+              <span style={{ fontWeight: '600', color: '#ed8936' }}>{getExpiringContracts().length}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Quá hạn:</span>
+              <span style={{ fontWeight: '600', color: '#f56565' }}>{getOverdueContracts().length}</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Houses Grid */}
       <div style={{ marginTop: '3rem' }}>

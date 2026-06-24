@@ -48,13 +48,15 @@ function RentCollections() {
     return 'N/A';
   };
 
-  // Get unique domes
+  // Get unique domes (filter out N/A)
   const getUniqueDomes = () => {
     const domes = new Set();
     contracts.forEach(contract => {
       if (contract.assignments && contract.assignments.length > 0) {
         contract.assignments.forEach(assignment => {
-          domes.add(assignment.houseName);
+          if (assignment.houseName && assignment.houseName !== 'N/A') {
+            domes.add(assignment.houseName);
+          }
         });
       }
     });
@@ -64,6 +66,12 @@ function RentCollections() {
   // Filter and sort collections
   const getProcessedCollections = () => {
     let filtered = collections;
+
+    // Filter out N/A entries
+    filtered = filtered.filter(collection => {
+      const dome = getDomeForContract(collection.contractId);
+      return dome && dome !== 'N/A';
+    });
 
     // Apply month filter
     if (filterMonth) {

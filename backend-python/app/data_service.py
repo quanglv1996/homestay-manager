@@ -407,24 +407,38 @@ def delete_expense(expense_id: str) -> bool:
 def get_revenue_stats(month: str) -> dict:
     """
     Calculate revenue statistics for a specific month (YYYY-MM)
-    Revenue = Contract fees (price + parking) + Utility bills paid - Expenses - Rent expenses
+    Revenue = Actual RentCollections (tiền thu được)
+    Projected Revenue = Active contract fees (tiền dự kiến)
+    Expenses = Regular expenses + Rent expenses
+    Net Revenue = Actual Revenue + Utility bills paid - Expenses
     """
     contracts = get_contracts()
     assignments = get_assignments()
+    rent_collections = get_rent_collections(month=month)
     utility_bills = get_utility_bills(month=month)
     expenses = get_expenses(month=month)
     rent_expenses = get_rent_expenses(month=month)
     
-    # Calculate total revenue from active contracts
+    # Calculate actual revenue from rent collections only
     total_revenue = 0.0
+    for collection in rent_collections:
+        if collection.get("isCollected"):
+            contract = next((c for c in contracts if c["id"] == collection["contractId"]), None)
+            if contract:
+                total_revenue += contract["price"]
+                if contract.get("hasParking") and contract.get("parkingInfo"):
+                    total_revenue += contract["parkingInfo"]["parkingFee"]
+    
+    # Calculate projected revenue from active contracts
+    projected_revenue = 0.0
     for assignment in assignments:
         contract = next((c for c in contracts if c["id"] == assignment["contractId"]), None)
         if contract and contract.get("status") == "active":
             # Base price
-            total_revenue += contract["price"]
+            projected_revenue += contract["price"]
             # Add parking fee if applicable
             if contract.get("hasParking") and contract.get("parkingInfo"):
-                total_revenue += contract["parkingInfo"]["parkingFee"]
+                projected_revenue += contract["parkingInfo"]["parkingFee"]
     
     # Calculate total utility bills collected
     total_utility_bills = sum(b["amount"] for b in utility_bills if b.get("isPaid"))
@@ -434,12 +448,13 @@ def get_revenue_stats(month: str) -> dict:
     total_rent_expenses = sum(r["amount"] for r in rent_expenses)
     total_expenses += total_rent_expenses
     
-    # Net revenue = revenue + utility bills - expenses - rent expenses
+    # Net revenue = actual revenue + utility bills - expenses
     net_revenue = total_revenue + total_utility_bills - total_expenses
     
     return {
         "month": month,
         "totalRevenue": total_revenue,
+        "projectedRevenue": projected_revenue,
         "totalExpenses": total_expenses,
         "totalUtilityBills": total_utility_bills,
         "netRevenue": net_revenue
@@ -448,6 +463,7 @@ def get_revenue_stats(month: str) -> dict:
 def get_revenue_stats_by_dome(month: str) -> List[dict]:
     """
     Calculate revenue statistics for each dome in a specific month
+    Revenue = Actual RentCollections
     Returns list of domes with their respective revenue stats
     """
     houses = get_houses()
@@ -455,6 +471,7 @@ def get_revenue_stats_by_dome(month: str) -> List[dict]:
     beds = get_beds()
     assignments = get_assignments()
     contracts = get_contracts()
+    rent_collections = get_rent_collections(month=month)
     utility_bills = get_utility_bills(month=month)
     expenses = get_expenses(month=month)
     rent_expenses = get_rent_expenses(month=month)
@@ -470,14 +487,19 @@ def get_revenue_stats_by_dome(month: str) -> List[dict]:
         # Get assignments for this house's beds
         house_assignments = [a for a in assignments if any(b["id"] == a["bedId"] for b in house_beds)]
         
-        # Calculate revenue from contracts in this house
+        # Calculate actual revenue from rent collections in this house
         house_revenue = 0.0
-        for assignment in house_assignments:
-            contract = next((c for c in contracts if c["id"] == assignment["contractId"]), None)
-            if contract and contract.get("status") == "active":
-                house_revenue += contract["price"]
-                if contract.get("hasParking") and contract.get("parkingInfo"):
-                    house_revenue += contract["parkingInfo"]["parkingFee"]
+        for collection in rent_collections:
+            if collection.get("isCollected"):
+                # Check if this collection belongs to this house
+                contract = next((c for c in contracts if c["id"] == collection["contractId"]), None)
+                if contract:
+                    # Check if contract is assigned to this house
+                    contract_assignments = [a for a in assignments if a["contractId"] == contract["id"]]
+                    if any(any(b["id"] == a["bedId"] for b in house_beds) for a in contract_assignments):
+                        house_revenue += contract["price"]
+                        if contract.get("hasParking") and contract.get("parkingInfo"):
+                            house_revenue += contract["parkingInfo"]["parkingFee"]
         
         # Calculate utility bills for this house
         house_utility_bills = sum(b["amount"] for b in utility_bills if b.get("houseId") == house["id"] and b.get("isPaid"))

@@ -12,5 +12,26 @@
     "contractId": "43a28c0c-6fd5-4ef5-9362-dcf27eb9e23f",
     "level": "top",
     "createdAt": "2026-06-23T09:22:36.389012"
+  },
+  {
+    "id": "1c01ef01-1425-4913-9b1b-ec64d2c617de",
+    "bedId": "6d618552-7b19-4adc-be26-1fb3c8da3e94",
+    "contractId": "cfd0f979-fd1d-4c7c-8f43-d8ca07cfab28",
+    "level": "top",
+    "createdAt": "2026-06-24T02:00:31.425328"
+  },
+  {
+    "id": "c34ee820-1dcb-46be-b3bf-5eeefcd8a594",
+    "bedId": "0fa1b856-daaf-4e8a-bebb-5915a5cc25cc",
+    "contractId": "0fff2f85-433d-45c2-b061-ad6e88b86bb6",
+    "level": "top",
+    "createdAt": "2026-06-24T02:00:34.350162"
+  },
+  {
+    "id": "a0531cc2-6a5f-40ba-9cd7-a57086e6256c",
+    "bedId": "20d2a041-e425-4d54-be17-83975bab3423",
+    "contractId": "4399db9f-7ece-4938-9d6c-0ad14bdaf7aa",
+    "level": "bottom",
+    "createdAt": "2026-06-24T02:03:07.773750"
   }
 ]
