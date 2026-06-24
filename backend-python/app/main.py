@@ -4,7 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from typing import Optional, List
 
-from app.models import House, Room, Bed, Contract, Assignment, UtilityBill, UtilityDistribution, Expense, RentExpense, RentCollection, UtilityInput
+from app.models import House, Room, Bed, Contract, Assignment, UtilityBill, UtilityDistribution, Expense, RentCollection, UtilityInput
 from app import data_service
 from app import revenue_service
 

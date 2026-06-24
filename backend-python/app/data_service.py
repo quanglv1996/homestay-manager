@@ -5,7 +5,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 import uuid
 
-from app.models import House, Room, Bed, Contract, Assignment, DashboardStats, UtilityBill, UtilityDistribution, Expense, RevenueStats, RentExpense, RentCollection
+from app.models import House, Room, Bed, Contract, Assignment, DashboardStats, UtilityBill, UtilityDistribution, Expense, RevenueStats, RentCollection
 
 # Data directory
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -900,7 +900,7 @@ def get_revenue_stats(month: str) -> dict:
     Calculate revenue statistics for a specific month (YYYY-MM)
     Revenue = Actual RentCollections by collection date + Utility bills to pay for paid items
     Projected Revenue = Active contract fees (tiền dự kiến)
-    Expenses = Regular expenses + Rent expenses
+    Expenses = Regular expenses
     Net Revenue = Total Revenue - Expenses
     
     NOTE: Revenue is calculated based on collectionDate/paidDate (when money was actually collected),
@@ -913,7 +913,6 @@ def get_revenue_stats(month: str) -> dict:
     # Get utility distributions
     all_utility_distributions = get_utility_distributions()
     expenses = get_expenses(month=month)
-    rent_expenses = get_rent_expenses(month=month)
     
     # Calculate actual revenue from rent collections only
     total_revenue = 0.0
@@ -948,10 +947,8 @@ def get_revenue_stats(month: str) -> dict:
     # Add utility bills to total revenue
     total_revenue += total_utility_bills
     
-    # Calculate total expenses (Khoản chi + Khoản chi tiêu thuê nhà)
+    # Calculate total expenses
     total_expenses = sum(e["amount"] for e in expenses)
-    total_rent_expenses = sum(r["amount"] for r in rent_expenses)
-    total_expenses += total_rent_expenses
     
     # Net revenue = total revenue (including utilities) - expenses
     net_revenue = total_revenue - total_expenses
@@ -983,7 +980,6 @@ def get_revenue_stats_by_dome(month: str) -> List[dict]:
     # Get all utility distributions for filtering by paidDate
     all_utility_distributions = get_utility_distributions()
     expenses = get_expenses(month=month)
-    rent_expenses = get_rent_expenses(month=month)
     
     dome_stats = []
     
@@ -1021,10 +1017,7 @@ def get_revenue_stats_by_dome(month: str) -> List[dict]:
         # Calculate expenses for this house
         house_expenses = sum(e["amount"] for e in expenses if e.get("houseId") == house["id"])
         
-        # Calculate rent expenses for this house
-        house_rent_expenses = sum(r["amount"] for r in rent_expenses if r.get("houseId") == house["id"])
-        
-        total_house_expenses = house_expenses + house_rent_expenses
+        total_house_expenses = house_expenses
         
         # Net revenue = total revenue (including paid utilities) - expenses
         house_net_revenue = house_revenue + house_utility_bills - total_house_expenses
@@ -1090,48 +1083,7 @@ def get_dashboard_stats() -> dict:
         "contractExpiringSoon": contract_expiring_soon
     }
 
-# Rent Expenses
-def get_rent_expenses(house_id: Optional[str] = None, month: Optional[str] = None) -> List[dict]:
-    """Get rent expenses, optionally filtered by house or month"""
-    rents = read_data("rent_expenses")
-    if house_id:
-        rents = [r for r in rents if r["houseId"] == house_id]
-    if month:
-        rents = [r for r in rents if r["month"] == month]
-    return rents
 
-def get_rent_expense_by_id(rent_id: str) -> Optional[dict]:
-    rents = get_rent_expenses()
-    return next((r for r in rents if r["id"] == rent_id), None)
-
-def create_rent_expense(rent: RentExpense) -> dict:
-    rents = get_rent_expenses()
-    new_rent = rent.dict()
-    new_rent["id"] = str(uuid.uuid4())
-    new_rent["createdAt"] = datetime.now().isoformat()
-    rents.append(new_rent)
-    write_data("rent_expenses", rents)
-    return new_rent
-
-def update_rent_expense(rent_id: str, rent: RentExpense) -> Optional[dict]:
-    rents = get_rent_expenses()
-    for i, r in enumerate(rents):
-        if r["id"] == rent_id:
-            updated = rent.dict(exclude_unset=True)
-            updated["id"] = rent_id
-            updated["updatedAt"] = datetime.now().isoformat()
-            rents[i] = {**r, **updated}
-            write_data("rent_expenses", rents)
-            return rents[i]
-    return None
-
-def delete_rent_expense(rent_id: str) -> bool:
-    rents = get_rent_expenses()
-    filtered = [r for r in rents if r["id"] != rent_id]
-    if len(filtered) == len(rents):
-        return False
-    write_data("rent_expenses", filtered)
-    return True
 
 # Rent Collections
 def get_rent_collections(contract_id: Optional[str] = None, month: Optional[str] = None) -> List[dict]:
