@@ -293,6 +293,7 @@ def get_contracts_with_assignments() -> List[dict]:
                             "level": assignment["level"],
                             "bedName": bed["name"],
                             "roomName": room["name"],
+                            "roomDescription": room.get("description", ""),
                             "houseName": house["name"] if house else "N/A"
                         })
             

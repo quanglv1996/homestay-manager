@@ -22,5 +22,29 @@
     "description": "Nữ",
     "createdAt": "2026-06-23T09:21:18.163910",
     "updatedAt": null
+  },
+  {
+    "id": "462fdda5-e482-4b5f-9482-5920f7a0128b",
+    "houseId": "5a4ed270-034c-4502-94f5-b28491889f41",
+    "name": "A1",
+    "description": "",
+    "createdAt": "2026-06-24T08:42:27.325948",
+    "updatedAt": null
+  },
+  {
+    "id": "f1fa9586-03fe-4b5b-a57e-56de7ab4eb9a",
+    "houseId": "5a4ed270-034c-4502-94f5-b28491889f41",
+    "name": "B1",
+    "description": "",
+    "createdAt": "2026-06-24T08:42:31.089122",
+    "updatedAt": null
+  },
+  {
+    "id": "3f04beea-a192-48aa-9be5-5a6743980d7b",
+    "houseId": "5a4ed270-034c-4502-94f5-b28491889f41",
+    "name": "V1",
+    "description": "",
+    "createdAt": "2026-06-24T08:42:34.805226",
+    "updatedAt": null
   }
 ]

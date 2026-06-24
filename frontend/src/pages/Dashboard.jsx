@@ -109,6 +109,27 @@ function Dashboard() {
     return contracts.filter(c => isContractOverdue(c.endDate));
   };
 
+  // Helper function to get bed and dome info for a contract
+  const getContractBedInfo = (contractId) => {
+    const assignment = assignments.find(a => a.contractId === contractId);
+    if (!assignment) return null;
+    
+    const bed = beds.find(b => b.id === assignment.bedId);
+    if (!bed) return null;
+    
+    const room = rooms.find(r => r.id === bed.roomId);
+    if (!room) return null;
+    
+    const house = houses.find(h => h.id === room.houseId);
+    if (!house) return null;
+    
+    return {
+      bedName: bed.name,
+      roomName: room.name,
+      houseName: house.name
+    };
+  };
+
   if (loading) {
     return <div className="loading">Đang tải dữ liệu...</div>;
   }
@@ -143,6 +164,51 @@ function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Houses Grid - Moved to top */}
+      <div style={{ marginTop: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h3 style={{ fontSize: '1.5rem', color: '#333' }}>Các Dome</h3>
+          <Link to="/houses" className="btn btn-primary">
+            Quản lý Dome
+          </Link>
+        </div>
+
+        {houses.length === 0 ? (
+          <div className="empty-state">
+            <h3>Chưa có Dome nào</h3>
+            <p>Hãy thêm Dome đầu tiên của bạn</p>
+            <Link to="/houses" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+              Thêm Dome
+            </Link>
+          </div>
+        ) : (
+          <div className="houses-grid">
+            {houses.map(house => {
+              const houseStats = getHouseStats(house.id);
+              return (
+                <Link 
+                  key={house.id} 
+                  to={`/houses/${house.id}`} 
+                  style={{ textDecoration: 'none' }}
+                >
+                  <div className="house-card">
+                    <h3>{house.name}</h3>
+                    <p>{house.description || 'Không có mô tả'}</p>
+                    <div className="stats">
+                      <span>Phòng: {houseStats.totalRooms}</span>
+                      <span>Giường: {houseStats.totalBeds}</span>
+                      <span style={{ color: '#48bb78', fontWeight: 600 }}>
+                        Trống: {houseStats.availablePositions}/{houseStats.totalPositions}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Revenue Statistics */}
       <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
@@ -282,14 +348,22 @@ function Dashboard() {
             <p style={{ color: '#666', fontSize: '0.9rem' }}>Không có hợp đồng sắp hết hạn</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {getExpiringContracts().slice(0, 5).map(contract => (
-                <div key={contract.id} style={{ padding: '0.75rem', background: '#fff5f5', borderRadius: '6px', borderLeft: '4px solid #ed8936' }}>
-                  <div style={{ fontWeight: '600', color: '#744210' }}>{contract.tenantName}</div>
-                  <div style={{ fontSize: '0.85rem', color: '#c53030', marginTop: '0.25rem' }}>
-                    Còn {getDaysUntilExpiry(contract.endDate)} ngày • Hết hạn: {new Date(contract.endDate).toLocaleDateString('vi-VN')}
+              {getExpiringContracts().slice(0, 5).map(contract => {
+                const bedInfo = getContractBedInfo(contract.id);
+                return (
+                  <div key={contract.id} style={{ padding: '0.75rem', background: '#fff5f5', borderRadius: '6px', borderLeft: '4px solid #ed8936' }}>
+                    <div style={{ fontWeight: '600', color: '#744210' }}>{contract.tenantName}</div>
+                    {bedInfo && (
+                      <div style={{ fontSize: '0.8rem', color: '#744210', marginTop: '0.25rem' }}>
+                        {bedInfo.houseName} • {bedInfo.roomName} • {bedInfo.bedName}
+                      </div>
+                    )}
+                    <div style={{ fontSize: '0.85rem', color: '#c53030', marginTop: '0.25rem' }}>
+                      Còn {getDaysUntilExpiry(contract.endDate)} ngày • Hết hạn: {new Date(contract.endDate).toLocaleDateString('vi-VN')}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {getExpiringContracts().length > 5 && (
                 <div style={{ fontSize: '0.85rem', color: '#666', textAlign: 'center', marginTop: '0.5rem' }}>
                   ... và {getExpiringContracts().length - 5} hợp đồng khác
@@ -306,14 +380,22 @@ function Dashboard() {
             <p style={{ color: '#666', fontSize: '0.9rem' }}>Không có hợp đồng quá hạn</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {getOverdueContracts().slice(0, 5).map(contract => (
-                <div key={contract.id} style={{ padding: '0.75rem', background: '#fff5f5', borderRadius: '6px', borderLeft: '4px solid #f56565' }}>
-                  <div style={{ fontWeight: '600', color: '#742a2a' }}>{contract.tenantName}</div>
-                  <div style={{ fontSize: '0.85rem', color: '#c53030', marginTop: '0.25rem' }}>
-                    Quá hạn {Math.abs(getDaysUntilExpiry(contract.endDate))} ngày • Hết hạn: {new Date(contract.endDate).toLocaleDateString('vi-VN')}
+              {getOverdueContracts().slice(0, 5).map(contract => {
+                const bedInfo = getContractBedInfo(contract.id);
+                return (
+                  <div key={contract.id} style={{ padding: '0.75rem', background: '#fff5f5', borderRadius: '6px', borderLeft: '4px solid #f56565' }}>
+                    <div style={{ fontWeight: '600', color: '#742a2a' }}>{contract.tenantName}</div>
+                    {bedInfo && (
+                      <div style={{ fontSize: '0.8rem', color: '#742a2a', marginTop: '0.25rem' }}>
+                        {bedInfo.houseName} • {bedInfo.roomName} • {bedInfo.bedName}
+                      </div>
+                    )}
+                    <div style={{ fontSize: '0.85rem', color: '#c53030', marginTop: '0.25rem' }}>
+                      Quá hạn {Math.abs(getDaysUntilExpiry(contract.endDate))} ngày • Hết hạn: {new Date(contract.endDate).toLocaleDateString('vi-VN')}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {getOverdueContracts().length > 5 && (
                 <div style={{ fontSize: '0.85rem', color: '#666', textAlign: 'center', marginTop: '0.5rem' }}>
                   ... và {getOverdueContracts().length - 5} hợp đồng khác
@@ -341,51 +423,6 @@ function Dashboard() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Houses Grid */}
-      <div style={{ marginTop: '3rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.5rem', color: '#333' }}>Các Dome</h3>
-          <Link to="/houses" className="btn btn-primary">
-            Quản lý Dome
-          </Link>
-        </div>
-
-        {houses.length === 0 ? (
-          <div className="empty-state">
-            <h3>Chưa có Dome nào</h3>
-            <p>Hãy thêm Dome đầu tiên của bạn</p>
-            <Link to="/houses" className="btn btn-primary" style={{ marginTop: '1rem' }}>
-              Thêm Dome
-            </Link>
-          </div>
-        ) : (
-          <div className="houses-grid">
-            {houses.map(house => {
-              const houseStats = getHouseStats(house.id);
-              return (
-                <Link 
-                  key={house.id} 
-                  to={`/houses/${house.id}`} 
-                  style={{ textDecoration: 'none' }}
-                >
-                  <div className="house-card">
-                    <h3>{house.name}</h3>
-                    <p>{house.description || 'Không có mô tả'}</p>
-                    <div className="stats">
-                      <span>Phòng: {houseStats.totalRooms}</span>
-                      <span>Giường: {houseStats.totalBeds}</span>
-                      <span style={{ color: '#48bb78', fontWeight: 600 }}>
-                        Trống: {houseStats.availablePositions}/{houseStats.totalPositions}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
       </div>
     </div>
   );

@@ -815,7 +815,7 @@ function Contracts() {
                 </div>
               )}
               
-              {contract.images && contract.images.length > 0 && (
+              {contract.assignments && contract.assignments.length > 0 && (
                 <div style={{ 
                   marginTop: '1rem', 
                   marginBottom: '1rem',
@@ -837,9 +837,17 @@ function Contracts() {
                           fontSize: '0.9rem'
                         }}
                       >
-                        <div><strong>Dome:</strong> {assignment.houseName}</div>
-                        <div><strong>Phòng:</strong> {assignment.roomName}</div>
-                        <div><strong>Giường:</strong> {assignment.bedName} - {assignment.level === 'top' ? '🛏️ Tầng trên' : '🛏️ Tầng dưới'}</div>
+                        <div style={{ fontWeight: '600', marginBottom: '0.25rem', color: '#2d3748' }}>
+                          {assignment.houseName} • {assignment.roomName} • {assignment.bedName}
+                        </div>
+                        {assignment.roomDescription && (
+                          <div style={{ fontSize: '0.85rem', color: '#4a5568', marginBottom: '0.25rem' }}>
+                            📝 {assignment.roomDescription}
+                          </div>
+                        )}
+                        <div style={{ fontSize: '0.85rem', color: '#718096' }}>
+                          {assignment.level === 'top' ? '🛏️ Tầng trên' : '🛏️ Tầng dưới'}
+                        </div>
                       </div>
                     ))}
                   </div>

@@ -70,5 +70,53 @@
     "description": "Cạnh cửa sổ",
     "createdAt": "2026-06-23T09:22:11.528943",
     "updatedAt": "2026-06-23T09:32:04.299821"
+  },
+  {
+    "id": "a3c6332c-018b-4cc8-8651-cd44e6cf87af",
+    "roomId": "462fdda5-e482-4b5f-9482-5920f7a0128b",
+    "name": "12",
+    "description": "",
+    "createdAt": "2026-06-24T08:42:38.281611",
+    "updatedAt": null
+  },
+  {
+    "id": "de8b0e57-4a37-4cf2-85fe-7f8f328de33e",
+    "roomId": "462fdda5-e482-4b5f-9482-5920f7a0128b",
+    "name": "32",
+    "description": "",
+    "createdAt": "2026-06-24T08:42:40.664693",
+    "updatedAt": null
+  },
+  {
+    "id": "79a1ded5-b184-4acc-9e3d-1a8efc4aa973",
+    "roomId": "462fdda5-e482-4b5f-9482-5920f7a0128b",
+    "name": "11",
+    "description": "",
+    "createdAt": "2026-06-24T08:42:45.348573",
+    "updatedAt": null
+  },
+  {
+    "id": "54f2f4b0-18f7-402b-ad74-6ae071c4cdfa",
+    "roomId": "f1fa9586-03fe-4b5b-a57e-56de7ab4eb9a",
+    "name": "32",
+    "description": "",
+    "createdAt": "2026-06-24T08:42:48.110069",
+    "updatedAt": null
+  },
+  {
+    "id": "9125f290-6caf-4e4f-acf5-af924c2da55b",
+    "roomId": "f1fa9586-03fe-4b5b-a57e-56de7ab4eb9a",
+    "name": "12",
+    "description": "23",
+    "createdAt": "2026-06-24T08:42:51.901676",
+    "updatedAt": null
+  },
+  {
+    "id": "49f723d2-9a7a-41d8-affb-819fd17a5c08",
+    "roomId": "3f04beea-a192-48aa-9be5-5a6743980d7b",
+    "name": "123",
+    "description": "",
+    "createdAt": "2026-06-24T08:42:54.726430",
+    "updatedAt": null
   }
 ]

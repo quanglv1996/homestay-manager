@@ -149,5 +149,36 @@
         "notes": ""
       }
     ]
+  },
+  {
+    "id": "68f266a1-582d-4122-a7f0-2ee0d4b42234",
+    "tenantName": "dsd",
+    "tenantPhone": "1",
+    "tenantEmail": "no_email@gmail.com",
+    "tenantIdCard": "2",
+    "startDate": "2026-01-07",
+    "endDate": "2026-12-07T00:00:00",
+    "durationMonths": 11,
+    "price": 1500000.0,
+    "deposit": 1500000.0,
+    "renewalMonths": 0,
+    "equipment": [
+      "Chăn",
+      "Ga",
+      "Vỏ gối",
+      "Ruột gối",
+      "Chìa khóa tủ",
+      "Chìa khóa nhà"
+    ],
+    "images": [],
+    "hasParking": false,
+    "parkingInfo": null,
+    "notes": "",
+    "status": "active",
+    "utilitySubsidy": 200000.0,
+    "extensionHistory": [],
+    "password": null,
+    "createdAt": "2026-06-24T08:43:39.817636",
+    "updatedAt": null
   }
 ]
