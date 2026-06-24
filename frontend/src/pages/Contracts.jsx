@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { getContractsWithAssignments, createContract, updateContract, deleteContract } from '../services/api';
 import RentCollectionPanel from '../components/RentCollectionPanel';
 
+// Fixed equipment list for handover
+const FIXED_EQUIPMENT = ['Chăn', 'Ga', 'Vỏ gối', 'Ruột gối', 'Chìa khóa tủ', 'Chìa khóa nhà'];
+
 function Contracts() {
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,7 +18,7 @@ function Contracts() {
   const [formData, setFormData] = useState({
     tenantName: '',
     tenantPhone: '',
-    tenantEmail: '',
+    tenantEmail: 'no_email@gmail.com',
     tenantIdCard: '',
     startDate: '',
     endDate: '',
@@ -29,6 +32,23 @@ function Contracts() {
   });
   const [newEquipment, setNewEquipment] = useState('');
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [imageInputRef, setImageInputRef] = useState(null);
+
+  const handleImageFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target.result;
+        setFormData({
+          ...formData,
+          images: [...formData.images, base64]
+        });
+      };
+      reader.readAsDataURL(file);
+      e.target.value = ''; // Reset input
+    }
+  };
 
   useEffect(() => {
     loadContracts();
@@ -145,7 +165,7 @@ function Contracts() {
     setFormData({
       tenantName: '',
       tenantPhone: '',
-      tenantEmail: '',
+      tenantEmail: 'no_email@gmail.com',
       tenantIdCard: '',
       startDate: '',
       endDate: '',
@@ -696,23 +716,67 @@ function Contracts() {
               )}
 
               <div className="form-group">
-                <label>Ảnh hợp đồng</label>
+                <label>🖼️ Ảnh hợp đồng</label>
                 <div className="equipment-list">
                   {formData.images.map((img, index) => (
-                    <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                      <img src={img} alt={`Preview ${index}`} style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
-                      <input type="text" value={img} readOnly style={{ flex: 1 }} />
-                      <button type="button" onClick={() => handleRemoveImage(index)}>
+                    <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', width: '100%' }}>
+                      {img.startsWith('data:') ? (
+                        <img src={img} alt={`Preview ${index}`} style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />
+                      ) : (
+                        <img src={img} alt={`Preview ${index}`} style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />
+                      )}
+                      <input type="text" value={img.startsWith('data:') ? `[Ảnh từ thiết bị]` : img} readOnly style={{ flex: 1, fontSize: '0.85rem' }} />
+                      <button type="button" onClick={() => handleRemoveImage(index)} style={{ padding: '0.4rem 0.75rem', background: '#f56565', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', flexShrink: 0 }}>
                         Xóa
                       </button>
                     </div>
                   ))}
-                  <div className="equipment-item">
+                </div>
+                
+                {/* Image Upload Options */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '1rem' }}>
+                  {/* File Input */}
+                  <div>
+                    <input
+                      ref={(input) => setImageInputRef(input)}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageFileSelect}
+                      style={{ display: 'none' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => imageInputRef?.click()}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        background: '#667eea',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: '500',
+                        fontSize: '0.95rem'
+                      }}
+                    >
+                      📱 Chọn từ thiết bị
+                    </button>
+                  </div>
+                  
+                  {/* URL Input */}
+                  <div>
                     <input
                       type="text"
                       value={newImageUrl}
                       onChange={(e) => setNewImageUrl(e.target.value)}
-                      placeholder="Nhập URL ảnh hoặc base64..."
+                      placeholder="Hoặc dán URL ảnh"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '2px solid #e0e0e0',
+                        borderRadius: '6px',
+                        fontSize: '0.95rem'
+                      }}
                       onKeyPress={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -720,48 +784,99 @@ function Contracts() {
                         }
                       }}
                     />
-                    <button 
-                      type="button" 
-                      onClick={handleAddImage}
-                      style={{ background: '#48bb78' }}
-                    >
-                      Thêm
-                    </button>
                   </div>
                 </div>
+                
+                {newImageUrl && (
+                  <button
+                    type="button"
+                    onClick={handleAddImage}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.5rem',
+                      padding: '0.6rem',
+                      background: '#48bb78',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontWeight: '500',
+                      fontSize: '0.95rem'
+                    }}
+                  >
+                    ✅ Thêm URL ảnh
+                  </button>
+                )}
               </div>
 
               <div className="form-group">
-                <label>Thiết bị bàn giao</label>
-                <div className="equipment-list">
-                  {formData.equipment.map((item, index) => (
-                    <div key={index} className="equipment-item">
-                      <input type="text" value={item} readOnly />
-                      <button type="button" onClick={() => handleRemoveEquipment(index)}>
-                        Xóa
+                <label style={{ fontWeight: '600', marginBottom: '0.75rem', display: 'block' }}>📋 Thiết bị bàn giao</label>
+                
+                {/* Fixed Equipment Checklist */}
+                <div style={{ background: '#f7fafc', padding: '1rem', borderRadius: '6px', marginBottom: '1rem', border: '1px solid #cbd5e0' }}>
+                  <div style={{ fontSize: '0.9rem', fontWeight: '500', marginBottom: '0.75rem', color: '#2d3748' }}>Danh sách cố định:</div>
+                  {FIXED_EQUIPMENT.map((item) => (
+                    <label key={item} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: '0.5rem', fontSize: '0.95rem' }}>
+                      <input
+                        type="checkbox"
+                        checked={formData.equipment.includes(item)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            if (!formData.equipment.includes(item)) {
+                              setFormData({
+                                ...formData,
+                                equipment: [...formData.equipment, item]
+                              });
+                            }
+                          } else {
+                            setFormData({
+                              ...formData,
+                              equipment: formData.equipment.filter(eq => eq !== item)
+                            });
+                          }
+                        }}
+                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                      />
+                      <span>{item}</span>
+                    </label>
+                  ))}
+                </div>
+
+                {/* Custom Equipment Items */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{ fontSize: '0.9rem', fontWeight: '500', marginBottom: '0.5rem', color: '#2d3748' }}>Thiết bị khác:</div>
+                  <div className="equipment-list">
+                    {formData.equipment
+                      .filter(item => !FIXED_EQUIPMENT.includes(item))
+                      .map((item, index) => (
+                        <div key={`custom-${index}`} className="equipment-item">
+                          <input type="text" value={item} readOnly />
+                          <button type="button" onClick={() => handleRemoveEquipment(formData.equipment.indexOf(item))}>
+                            Xóa
+                          </button>
+                        </div>
+                      ))}
+                    <div className="equipment-item">
+                      <input
+                        type="text"
+                        value={newEquipment}
+                        onChange={(e) => setNewEquipment(e.target.value)}
+                        placeholder="Nhập tên thiết bị khác..."
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddEquipment();
+                          }
+                        }}
+                      />
+                      <button 
+                        type="button" 
+                        onClick={handleAddEquipment}
+                        style={{ background: '#48bb78' }}
+                      >
+                        Thêm
                       </button>
                     </div>
-                  ))}
-                  <div className="equipment-item">
-                    <input
-                      type="text"
-                      value={newEquipment}
-                      onChange={(e) => setNewEquipment(e.target.value)}
-                      placeholder="Nhập tên thiết bị..."
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddEquipment();
-                        }
-                      }}
-                    />
-                    <button 
-                      type="button" 
-                      onClick={handleAddEquipment}
-                      style={{ background: '#48bb78' }}
-                    >
-                      Thêm
-                    </button>
                   </div>
                 </div>
               </div>

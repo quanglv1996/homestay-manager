@@ -90,7 +90,7 @@ function HouseDetail() {
     e.preventDefault();
     try {
       if (editingRoom) {
-        await updateRoom(editingRoom.id, roomFormData);
+        await updateRoom(editingRoom.id, { ...roomFormData, houseId: editingRoom.houseId });
       } else {
         await createRoom({ ...roomFormData, houseId: id });
       }

@@ -599,8 +599,39 @@ body {
     padding: 1rem;
   }
 
+  .header {
+    padding: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .header h1 {
+    font-size: 1.4rem;
+  }
+
+  .nav {
+    padding: 0.5rem;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    overflow-x: auto;
+  }
+
+  .nav-link {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
   .dashboard-stats {
     grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-card .value {
+    font-size: 1.8rem;
   }
 
   .houses-grid {
@@ -611,12 +642,177 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .rooms-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
   .beds-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .modal {
     width: 95%;
     padding: 1.5rem;
+    max-width: 100%;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .modal-actions button {
+    width: 100%;
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+  }
+
+  .contract-item .contract-info {
+    grid-template-columns: 1fr;
+  }
+
+  .contract-item .contract-actions {
+    flex-wrap: wrap;
+  }
+
+  .rooms-view {
+    padding: 1rem;
+  }
+
+  .beds-view {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 0.75rem;
+  }
+
+  .header {
+    padding: 0.75rem;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .header h1 {
+    font-size: 1.2rem;
+  }
+
+  .logout-btn {
+    width: 100%;
+    text-align: center;
+    padding: 0.75rem;
+  }
+
+  .nav {
+    padding: 0.25rem;
+    gap: 0.1rem;
+  }
+
+  .nav-link {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .dashboard-stats {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .stat-card {
+    padding: 0.75rem;
+  }
+
+  .stat-card h3 {
+    font-size: 0.8rem;
+  }
+
+  .stat-card .value {
+    font-size: 1.5rem;
+  }
+
+  .house-card,
+  .room-card {
+    padding: 1rem;
+  }
+
+  .house-card h3,
+  .room-card h4 {
+    font-size: 1rem;
+  }
+
+  .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .btn-small {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .modal {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 8px;
+  }
+
+  .modal h2 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+  }
+
+  .modal-actions {
+    gap: 0.5rem;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group label {
+    font-size: 0.9rem;
+  }
+
+  .back-btn {
+    margin-bottom: 1rem;
+    padding: 0.4rem 0.75rem;
+  }
+
+  .contract-item {
+    padding: 1rem;
+  }
+
+  .contract-item h3 {
+    font-size: 1rem;
+  }
+
+  .empty-state {
+    padding: 1.5rem;
+  }
+
+  .empty-state h3 {
+    font-size: 1.2rem;
+  }
+
+  .beds-view h4 {
+    font-size: 1rem;
+  }
+
+  .tooltip {
+    max-width: 200px;
+    font-size: 0.75rem;
+    padding: 0.5rem;
   }
 }
