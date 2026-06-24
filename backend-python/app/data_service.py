@@ -194,11 +194,29 @@ def get_contract_by_id(contract_id: str) -> Optional[dict]:
     contracts = get_contracts()
     return next((c for c in contracts if c["id"] == contract_id), None)
 
+def calculate_contract_end_date(start_date_str: str, duration_months: int, renewal_months: int = 0) -> str:
+    """Calculate contract end date from start date + duration months + renewal months"""
+    from dateutil.relativedelta import relativedelta
+    start_date = datetime.fromisoformat(start_date_str.replace('Z', '+00:00') if 'T' in start_date_str else start_date_str + 'T00:00:00')
+    total_months = duration_months + renewal_months
+    end_date = start_date + relativedelta(months=total_months)
+    return end_date.isoformat()
+
 def create_contract(contract: Contract) -> dict:
     contracts = get_contracts()
     new_contract = contract.dict()
     new_contract["id"] = str(uuid.uuid4())
     new_contract["createdAt"] = datetime.now().isoformat()
+    
+    # Calculate endDate from startDate + durationMonths + renewalMonths
+    if "startDate" in new_contract and "durationMonths" in new_contract:
+        renewal = new_contract.get("renewalMonths", 0)
+        new_contract["endDate"] = calculate_contract_end_date(
+            new_contract["startDate"], 
+            new_contract["durationMonths"],
+            renewal
+        )
+    
     contracts.append(new_contract)
     write_data("contracts", contracts)
     return new_contract
@@ -210,7 +228,18 @@ def update_contract(contract_id: str, contract: Contract) -> Optional[dict]:
             updated = contract.dict(exclude_unset=True)
             updated["id"] = contract_id
             updated["updatedAt"] = datetime.now().isoformat()
-            contracts[i] = {**c, **updated}
+            
+            # Recalculate endDate if durationMonths or renewalMonths changed
+            merged = {**c, **updated}
+            if "startDate" in merged and "durationMonths" in merged:
+                renewal = merged.get("renewalMonths", 0)
+                merged["endDate"] = calculate_contract_end_date(
+                    merged["startDate"],
+                    merged["durationMonths"],
+                    renewal
+                )
+            
+            contracts[i] = merged
             write_data("contracts", contracts)
             return contracts[i]
     return None

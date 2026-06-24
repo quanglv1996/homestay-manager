@@ -37,8 +37,11 @@ class Contract(BaseModel):
     tenantEmail: Optional[str] = ""
     tenantIdCard: Optional[str] = ""
     startDate: str
-    endDate: str
+    endDate: str  # Computed from startDate + durationMonths
+    durationMonths: int  # Số tháng kí hợp đồng (1, 2, 3, 6, 12, ...)
     price: float  # Giá thuê cơ bản
+    deposit: Optional[float] = None  # Tiền cọc (mặc định = price)
+    renewalMonths: Optional[int] = 0  # Số tháng gia hạn thêm
     equipment: Optional[List[str]] = []
     images: Optional[List[str]] = []  # Danh sách URL hoặc base64 ảnh
     hasParking: Optional[bool] = False  # Có đăng ký gửi xe hay không
@@ -80,7 +83,8 @@ class Expense(BaseModel):
     description: str  # Mô tả khoản chi
     amount: float  # Số tiền
     date: str  # Ngày chi
-    category: Optional[str] = ""  # Loại chi (sửa chữa, mua sắm, ...)
+    type: Optional[str] = "khac"  # Loại chi: "thuenha" hoặc "khac"
+    category: Optional[str] = ""  # Loại chi chi tiết (sửa chữa, mua sắm, ...)
     houseId: Optional[str] = None  # Dome nào (None = "Khác" - dùng chung)
     notes: Optional[str] = ""
     createdAt: Optional[str] = None

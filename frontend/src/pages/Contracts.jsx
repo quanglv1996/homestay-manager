@@ -16,14 +16,17 @@ function Contracts() {
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc', 'desc'
   const [filterByDome, setFilterByDome] = useState(''); // empty = all domes
   const [filterByStatus, setFilterByStatus] = useState('all'); // 'all', 'expiring', 'active'
+  const [passwordInput, setPasswordInput] = useState(''); // Password for editing
   const [formData, setFormData] = useState({
     tenantName: '',
     tenantPhone: '',
     tenantEmail: 'no_email@gmail.com',
     tenantIdCard: '',
     startDate: '',
-    endDate: '',
+    durationMonths: 1,
     price: '',
+    deposit: '',
+    renewalMonths: 0,
     equipment: [],
     images: [],
     hasParking: false,
@@ -82,14 +85,14 @@ function Contracts() {
       if (!formData.startDate) {
         throw new Error('Vui lòng chọn ngày bắt đầu');
       }
-      if (!formData.endDate) {
-        throw new Error('Vui lòng chọn ngày kết thúc');
-      }
-      if (new Date(formData.startDate) >= new Date(formData.endDate)) {
-        throw new Error('Ngày bắt đầu phải trước ngày kết thúc');
+      if (!formData.durationMonths || formData.durationMonths <= 0) {
+        throw new Error('Vui lòng nhập số tháng hợp lệ (> 0)');
       }
       if (!formData.price || parseFloat(formData.price) <= 0) {
         throw new Error('Vui lòng nhập giá thuê hợp lệ');
+      }
+      if (editingContract && !passwordInput) {
+        throw new Error('Vui lòng nhập mật khẩu để sửa hợp đồng');
       }
       if (formData.hasParking && (!formData.parkingInfo?.vehicleInfo?.trim() || !formData.parkingInfo?.cardNumber?.trim() || !formData.parkingInfo?.parkingFee)) {
         throw new Error('Vui lòng điền đầy đủ thông tin gửi xe');
@@ -97,7 +100,10 @@ function Contracts() {
       
       const contractData = {
         ...formData,
+        durationMonths: parseInt(formData.durationMonths),
         price: parseFloat(formData.price),
+        deposit: parseFloat(formData.deposit) || parseFloat(formData.price),
+        renewalMonths: parseInt(formData.renewalMonths) || 0,
         parkingInfo: formData.hasParking && formData.parkingInfo ? {
           ...formData.parkingInfo,
           parkingFee: parseFloat(formData.parkingInfo.parkingFee)
@@ -105,7 +111,8 @@ function Contracts() {
       };
       
       if (editingContract) {
-        await updateContract(editingContract.id, contractData);
+        // Add password to request for verification
+        await updateContract(editingContract.id, { ...contractData, password: passwordInput });
       } else {
         await createContract(contractData);
       }
@@ -134,8 +141,10 @@ function Contracts() {
       hasParking: contract.hasParking || false,
       parkingInfo: contract.parkingInfo || null,
       startDate: contract.startDate.split('T')[0],
-      endDate: contract.endDate.split('T')[0],
+      durationMonths: contract.durationMonths || 1,
       price: contract.price,
+      deposit: contract.deposit || contract.price,
+      renewalMonths: contract.renewalMonths || 0,
       equipment: contract.equipment || [],
       notes: contract.notes || '',
       status: contract.status
@@ -169,8 +178,10 @@ function Contracts() {
       tenantEmail: 'no_email@gmail.com',
       tenantIdCard: '',
       startDate: '',
-      endDate: '',
+      durationMonths: 1,
       price: '',
+      deposit: '',
+      renewalMonths: 0,
       equipment: [],
       images: [],
       hasParking: false,
@@ -178,6 +189,7 @@ function Contracts() {
       notes: '',
       status: 'active'
     });
+    setPasswordInput('');
     setNewEquipment('');
     setNewImageUrl('');
   };
@@ -686,12 +698,14 @@ function Contracts() {
               </div>
 
               <div className="form-group">
-                <label>Ngày kết thúc *</label>
+                <label>Số tháng muốn kí *</label>
                 <input
-                  type="date"
+                  type="number"
                   required
-                  value={formData.endDate}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  min="1"
+                  value={formData.durationMonths}
+                  onChange={(e) => setFormData({ ...formData, durationMonths: e.target.value })}
+                  placeholder="1, 2, 3, 6, 12..."
                 />
               </div>
 
@@ -705,6 +719,47 @@ function Contracts() {
                   placeholder="1000000"
                 />
               </div>
+
+              <div className="form-group">
+                <label>Tiền cọc (VNĐ)</label>
+                <input
+                  type="number"
+                  value={formData.deposit}
+                  onChange={(e) => setFormData({ ...formData, deposit: e.target.value })}
+                  placeholder={formData.price || '0'}
+                />
+                <small style={{ color: '#666', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
+                  Mặc định: {(parseFloat(formData.price) || 0).toLocaleString('vi-VN')} VNĐ (bằng giá thuê)
+                </small>
+              </div>
+
+              <div className="form-group">
+                <label>Gia hạn thêm (tháng)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.renewalMonths}
+                  onChange={(e) => setFormData({ ...formData, renewalMonths: e.target.value })}
+                  placeholder="0"
+                />
+              </div>
+
+              {editingContract && (
+                <div className="form-group" style={{ background: '#fff5f5', padding: '1rem', borderRadius: '6px', border: '2px solid #fc8181' }}>
+                  <label style={{ color: '#c53030', fontWeight: '600' }}>Mật khẩu xác nhận *</label>
+                  <input
+                    type="password"
+                    required
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    placeholder="Nhập mật khẩu để sửa"
+                    style={{ marginTop: '0.5rem' }}
+                  />
+                  <small style={{ color: '#742a2a', fontSize: '0.85rem', display: 'block', marginTop: '0.5rem' }}>
+                    ⚠️ Cần mật khẩu để tránh sai dữ liệu khi sửa hợp đồng
+                  </small>
+                </div>
+              )}
 
               <div className="form-group" style={{ borderTop: '2px solid #e2e8f0', paddingTop: '1rem' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>

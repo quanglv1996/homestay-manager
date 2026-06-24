@@ -6,7 +6,6 @@ import HouseDetail from './pages/HouseDetail';
 import Contracts from './pages/Contracts';
 import UtilityBills from './pages/UtilityBills';
 import Expenses from './pages/Expenses';
-import RentExpenses from './pages/RentExpenses';
 import RentCollections from './pages/RentCollections';
 import Login from './pages/Login';
 import './App.css';
@@ -45,12 +44,6 @@ function Navigation() {
         className={`nav-link ${location.pathname === '/expenses' ? 'active' : ''}`}
       >
         Khoản chi
-      </Link>
-      <Link 
-        to="/rent-expenses" 
-        className={`nav-link ${location.pathname === '/rent-expenses' ? 'active' : ''}`}
-      >
-        Khoản thuê nhà
       </Link>
       <Link 
         to="/rent-collections" 
@@ -102,7 +95,6 @@ function App() {
             <Route path="/contracts" element={<Contracts />} />
             <Route path="/utility-bills" element={<UtilityBills />} />
             <Route path="/expenses" element={<Expenses />} />
-            <Route path="/rent-expenses" element={<RentExpenses />} />
             <Route path="/rent-collections" element={<RentCollections />} />
           </Routes>
         </main>

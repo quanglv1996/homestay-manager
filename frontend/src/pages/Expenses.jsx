@@ -19,6 +19,7 @@ function Expenses() {
     description: '',
     amount: '',
     date: '',
+    type: 'khac',
     category: '',
     houseId: null,
     notes: ''
@@ -73,6 +74,7 @@ function Expenses() {
       description: expense.description,
       amount: expense.amount,
       date: expense.date.split('T')[0],
+      type: expense.type || 'khac',
       category: expense.category || '',
       houseId: expense.houseId || '',
       notes: expense.notes || ''
@@ -105,6 +107,7 @@ function Expenses() {
       description: '',
       amount: '',
       date: '',
+      type: 'khac',
       category: '',
       houseId: '',
       notes: ''
@@ -348,7 +351,19 @@ function Expenses() {
               </div>
 
               <div className="form-group">
-                <label>Loại khoản chi</label>
+                <label>Loại khoản chi *</label>
+                <select
+                  required
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                >
+                  <option value="khac">Khác</option>
+                  <option value="thuenha">Thuê nhà</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Phân loại chi tiết</label>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}

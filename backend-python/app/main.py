@@ -139,7 +139,16 @@ def create_contract(contract: Contract):
 
 @app.put("/api/contracts/{contract_id}")
 def update_contract(contract_id: str, contract: Contract):
-    updated = data_service.update_contract(contract_id, contract)
+    # Check if password is provided in the request (it will be in contract dict)
+    contract_dict = contract.dict()
+    password = contract_dict.pop("password", None)
+    
+    if password != "quang@2305":
+        raise HTTPException(status_code=401, detail="Invalid password - cannot edit contract")
+    
+    # Remove password from contract data before updating
+    contract_data = Contract(**contract_dict)
+    updated = data_service.update_contract(contract_id, contract_data)
     if not updated:
         raise HTTPException(status_code=404, detail="Contract not found")
     return updated
@@ -236,36 +245,6 @@ def update_expense(expense_id: str, expense: Expense):
 def delete_expense(expense_id: str):
     if not data_service.delete_expense(expense_id):
         raise HTTPException(status_code=404, detail="Expense not found")
-    return None
-
-# Rent Expenses
-@app.get("/api/rent-expenses")
-def get_rent_expenses(house_id: Optional[str] = Query(None), month: Optional[str] = Query(None)):
-    """Get rent expenses, optionally filtered by house_id or month (YYYY-MM)"""
-    return data_service.get_rent_expenses(house_id, month)
-
-@app.get("/api/rent-expenses/{rent_id}")
-def get_rent_expense(rent_id: str):
-    rent = data_service.get_rent_expense_by_id(rent_id)
-    if not rent:
-        raise HTTPException(status_code=404, detail="Rent expense not found")
-    return rent
-
-@app.post("/api/rent-expenses", status_code=201)
-def create_rent_expense(rent: RentExpense):
-    return data_service.create_rent_expense(rent)
-
-@app.put("/api/rent-expenses/{rent_id}")
-def update_rent_expense(rent_id: str, rent: RentExpense):
-    updated = data_service.update_rent_expense(rent_id, rent)
-    if not updated:
-        raise HTTPException(status_code=404, detail="Rent expense not found")
-    return updated
-
-@app.delete("/api/rent-expenses/{rent_id}", status_code=204)
-def delete_rent_expense(rent_id: str):
-    if not data_service.delete_rent_expense(rent_id):
-        raise HTTPException(status_code=404, detail="Rent expense not found")
     return None
 
 # Rent Collections
