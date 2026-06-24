@@ -48,6 +48,15 @@ function RentCollections() {
     return 'N/A';
   };
 
+  // Get collection month from collectionDate (tháng ghi nhận tiền)
+  const getCollectionMonth = (collectionDate) => {
+    if (!collectionDate) return '';
+    const date = new Date(collectionDate);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+  };
+
   // Get unique domes (filter out N/A)
   const getUniqueDomes = () => {
     const domes = new Set();
@@ -73,9 +82,12 @@ function RentCollections() {
       return dome && dome !== 'N/A';
     });
 
-    // Apply month filter
+    // Apply collection month filter (based on collectionDate)
     if (filterMonth) {
-      filtered = filtered.filter(c => c.month === filterMonth);
+      filtered = filtered.filter(c => {
+        const collectionMonth = getCollectionMonth(c.collectionDate);
+        return collectionMonth === filterMonth;
+      });
     }
 
     // Apply dome filter
@@ -85,12 +97,15 @@ function RentCollections() {
       });
     }
 
-    // Apply sorting
+    // Apply sorting by collection date descending (newest first)
     const sorted = [...filtered].sort((a, b) => {
       let compareValue = 0;
 
       if (sortBy === 'month') {
-        compareValue = a.month.localeCompare(b.month);
+        // Sort by collection date (from collectionDate field)
+        const aCollectionDate = new Date(a.collectionDate || '');
+        const bCollectionDate = new Date(b.collectionDate || '');
+        compareValue = bCollectionDate - aCollectionDate; // Descending by default
       } else if (sortBy === 'dome') {
         const aDome = getDomeForContract(a.contractId);
         const bDome = getDomeForContract(b.contractId);
@@ -101,7 +116,10 @@ function RentCollections() {
         compareValue = aName.localeCompare(bName);
       }
 
-      return sortOrder === 'asc' ? compareValue : -compareValue;
+      if (sortBy !== 'month') {
+        return sortOrder === 'asc' ? compareValue : -compareValue;
+      }
+      return sortOrder === 'asc' ? -compareValue : compareValue;
     });
 
     return sorted;
@@ -109,8 +127,11 @@ function RentCollections() {
 
   const filteredCollections = getProcessedCollections();
 
-  // Get unique months for filter
-  const uniqueMonths = [...new Set(collections.map(c => c.month))].sort().reverse();
+  // Get unique collection months for filter (from collectionDate)
+  const uniqueCollectionMonths = [...new Set(collections
+    .map(c => getCollectionMonth(c.collectionDate))
+    .filter(m => m)
+  )].sort().reverse();
 
   const totalCollected = filteredCollections.reduce((sum, collection) => {
     return sum + getContractPrice(collection.contractId);
@@ -152,7 +173,7 @@ function RentCollections() {
       }}>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#2d3748' }}>
-            Lọc theo tháng:
+            Lọc theo tháng ghi nhận:
           </label>
           <select
             value={filterMonth}
@@ -166,7 +187,7 @@ function RentCollections() {
             }}
           >
             <option value="">Tất cả các tháng</option>
-            {[...new Set(collections.map(c => c.month))].sort().reverse().map(month => (
+            {uniqueCollectionMonths.map(month => (
               <option key={month} value={month}>{month}</option>
             ))}
           </select>
@@ -315,7 +336,8 @@ function RentCollections() {
               <tr style={{ backgroundColor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
                 <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Tên khách</th>
                 <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Dome</th>
-                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Tháng</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Tháng tiền</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Tháng ghi nhận</th>
                 <th style={{ padding: '1rem', textAlign: 'right', fontWeight: '600', color: '#374151' }}>Tiền nhà</th>
                 <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Ngày thu</th>
               </tr>
@@ -363,6 +385,19 @@ function RentCollections() {
                       fontWeight: '500'
                     }}>
                       {collection.month}
+                    </span>
+                  </td>
+                  <td style={{ padding: '1rem', color: '#6b7280' }}>
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '0.25rem 0.75rem',
+                      backgroundColor: '#d1fae5',
+                      color: '#065f46',
+                      borderRadius: '20px',
+                      fontSize: '0.9rem',
+                      fontWeight: '500'
+                    }}>
+                      {getCollectionMonth(collection.collectionDate)}
                     </span>
                   </td>
                   <td style={{ padding: '1rem', textAlign: 'right', color: '#1f2937', fontWeight: '600' }}>

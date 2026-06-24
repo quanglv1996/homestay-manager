@@ -5,7 +5,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 import uuid
 
-from app.models import House, Room, Bed, Contract, Assignment, DashboardStats, UtilityBill, Expense, RevenueStats, RentExpense
+from app.models import House, Room, Bed, Contract, Assignment, DashboardStats, UtilityBill, UtilityDistribution, Expense, RevenueStats, RentExpense, RentCollection
 
 # Data directory
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -19,6 +19,7 @@ FILES = {
     "contracts": DATA_DIR / "contracts.json",
     "assignments": DATA_DIR / "assignments.json",
     "utility_bills": DATA_DIR / "utility_bills.json",
+    "utility_distributions": DATA_DIR / "utility_distributions.json",
     "expenses": DATA_DIR / "expenses.json",
     "rent_expenses": DATA_DIR / "rent_expenses.json",
     "rent_collections": DATA_DIR / "rent_collections.json"
@@ -225,13 +226,17 @@ def update_contract(contract_id: str, contract: Contract) -> Optional[dict]:
     contracts = get_contracts()
     for i, c in enumerate(contracts):
         if c["id"] == contract_id:
-            updated = contract.dict(exclude_unset=True)
+            # Exclude password field when updating
+            updated = contract.dict(exclude_unset=True, exclude={"password"})
             updated["id"] = contract_id
             updated["updatedAt"] = datetime.now().isoformat()
             
-            # Recalculate endDate if durationMonths or renewalMonths changed
+            # Merge updated values with existing contract
             merged = {**c, **updated}
-            if "startDate" in merged and "durationMonths" in merged:
+            
+            # Only recalculate endDate if it wasn't explicitly provided in the update
+            # (This allows contract extensions to use explicit endDate values)
+            if "endDate" not in updated and "startDate" in merged and "durationMonths" in merged:
                 renewal = merged.get("renewalMonths", 0)
                 merged["endDate"] = calculate_contract_end_date(
                     merged["startDate"],
@@ -436,14 +441,19 @@ def delete_expense(expense_id: str) -> bool:
 def get_revenue_stats(month: str) -> dict:
     """
     Calculate revenue statistics for a specific month (YYYY-MM)
-    Revenue = Actual RentCollections (tiền thu được)
+    Revenue = Actual RentCollections by collection date (tiền thu được trong tháng)
     Projected Revenue = Active contract fees (tiền dự kiến)
     Expenses = Regular expenses + Rent expenses
     Net Revenue = Actual Revenue + Utility bills paid - Expenses
+    
+    NOTE: Revenue is now calculated based on collectionDate (when money was actually collected),
+    not the rent month. So if someone collects rent for months 10, 11, 12 in October, 
+    all three payments count as October revenue.
     """
     contracts = get_contracts()
     assignments = get_assignments()
-    rent_collections = get_rent_collections(month=month)
+    # Get collections by collection date month, not rent month
+    rent_collections = get_rent_collections_by_collection_date(month)
     utility_bills = get_utility_bills(month=month)
     expenses = get_expenses(month=month)
     rent_expenses = get_rent_expenses(month=month)
@@ -492,15 +502,18 @@ def get_revenue_stats(month: str) -> dict:
 def get_revenue_stats_by_dome(month: str) -> List[dict]:
     """
     Calculate revenue statistics for each dome in a specific month
-    Revenue = Actual RentCollections
+    Revenue = Actual RentCollections by collection date
     Returns list of domes with their respective revenue stats
+    
+    NOTE: Collections are grouped by collectionDate month, not rent month
     """
     houses = get_houses()
     rooms = get_rooms()
     beds = get_beds()
     assignments = get_assignments()
     contracts = get_contracts()
-    rent_collections = get_rent_collections(month=month)
+    # Get collections by collection date month, not rent month
+    rent_collections = get_rent_collections_by_collection_date(month)
     utility_bills = get_utility_bills(month=month)
     expenses = get_expenses(month=month)
     rent_expenses = get_rent_expenses(month=month)
@@ -648,13 +661,28 @@ def delete_rent_expense(rent_id: str) -> bool:
 
 # Rent Collections
 def get_rent_collections(contract_id: Optional[str] = None, month: Optional[str] = None) -> List[dict]:
-    """Get rent collections, optionally filtered by contract or month"""
+    """Get rent collections, optionally filtered by contract or month (rent month)"""
     collections = read_data("rent_collections")
     if contract_id:
         collections = [c for c in collections if c["contractId"] == contract_id]
     if month:
         collections = [c for c in collections if c["month"] == month]
     return collections
+
+def get_rent_collections_by_collection_date(collection_month: str) -> List[dict]:
+    """Get rent collections filtered by collection date month (YYYY-MM)
+    This groups collections by the month they were actually collected (from collectionDate field)
+    """
+    collections = read_data("rent_collections")
+    filtered = []
+    for c in collections:
+        if c.get("collectionDate"):
+            # Extract YYYY-MM from collectionDate
+            collection_date = c["collectionDate"]
+            collection_month_str = collection_date[:7]  # First 7 chars: YYYY-MM
+            if collection_month_str == collection_month:
+                filtered.append(c)
+    return filtered
 
 def get_rent_collection_by_id(collection_id: str) -> Optional[dict]:
     collections = get_rent_collections()
@@ -710,6 +738,238 @@ def delete_rent_collection(collection_id: str) -> bool:
         return False
     write_data("rent_collections", filtered)
     return True
+
+# Utility Bills Management
+def get_utility_bills(house_id: Optional[str] = None, month: Optional[str] = None) -> List[dict]:
+    """Get utility bills, optionally filtered by house_id or month (YYYY-MM)"""
+    bills = read_data("utility_bills")
+    if house_id:
+        bills = [b for b in bills if b.get("houseId") == house_id]
+    if month:
+        bills = [b for b in bills if b.get("month") == month]
+    return bills
+
+def get_utility_bill_by_id(bill_id: str) -> Optional[dict]:
+    bills = get_utility_bills()
+    for bill in bills:
+        if bill.get("id") == bill_id:
+            return bill
+    return None
+
+def create_utility_bill(bill: UtilityBill) -> dict:
+    bills = get_utility_bills()
+    new_bill = bill.dict()
+    new_bill["id"] = str(uuid.uuid4())
+    new_bill["createdAt"] = datetime.now().isoformat()
+    bills.append(new_bill)
+    write_data("utility_bills", bills)
+    return new_bill
+
+def update_utility_bill(bill_id: str, bill: UtilityBill) -> Optional[dict]:
+    bills = get_utility_bills()
+    for i, b in enumerate(bills):
+        if b["id"] == bill_id:
+            updated = bill.dict(exclude_unset=True)
+            updated["id"] = bill_id
+            updated["updatedAt"] = datetime.now().isoformat()
+            bills[i] = {**b, **updated}
+            write_data("utility_bills", bills)
+            return bills[i]
+    return None
+
+def delete_utility_bill(bill_id: str) -> bool:
+    bills = get_utility_bills()
+    filtered = [b for b in bills if b["id"] != bill_id]
+    if len(filtered) == len(bills):
+        return False
+    # Also delete all distributions for this bill
+    distributions = get_utility_distributions()
+    filtered_dist = [d for d in distributions if d.get("utilityBillId") != bill_id]
+    write_data("utility_distributions", filtered_dist)
+    
+    write_data("utility_bills", filtered)
+    return True
+
+def get_utility_distributions(house_id: Optional[str] = None, month: Optional[str] = None) -> List[dict]:
+    """Get utility distributions (per contract allocations)"""
+    distributions = read_data("utility_distributions")
+    if house_id:
+        distributions = [d for d in distributions if d.get("houseId") == house_id]
+    if month:
+        distributions = [d for d in distributions if d.get("month") == month]
+    return distributions
+
+def get_utility_distribution_by_id(dist_id: str) -> Optional[dict]:
+    distributions = get_utility_distributions()
+    for dist in distributions:
+        if dist.get("id") == dist_id:
+            return dist
+    return None
+
+def calculate_utility_distribution(bill_id: str) -> List[dict]:
+    """
+    Phân bổ tiền điện nước cho các hợp đồng dựa trên số ngày ở
+    - Lấy tất cả hợp đồng active trong tháng của căn này
+    - Tính số ngày ở cho mỗi hợp đồng
+    - Chia đều tiền điện/nước + chi phí khác theo số ngày
+    - Tính subsidy cho mỗi hợp đồng (cũng theo số ngày)
+    """
+    bill = get_utility_bill_by_id(bill_id)
+    if not bill:
+        return []
+    
+    house_id = bill.get("houseId")
+    month = bill.get("month")  # Format: YYYY-MM
+    
+    # Get house info for utility subsidy
+    house = get_house_by_id(house_id)
+    utility_subsidy = house.get("utilitySubsidy", 0) if house else 0
+    
+    # Parse year-month
+    year, month_num = map(int, month.split("-"))
+    
+    # Get contracts for this house in this month
+    contracts = get_contracts_with_assignments()
+    active_contracts = []
+    
+    for contract in contracts:
+        if contract.get("houseId") != house_id:
+            continue
+        
+        start = datetime.fromisoformat(contract.get("startDate", "").replace("Z", "+00:00") if "T" in contract.get("startDate", "") else contract.get("startDate", ""))
+        end = datetime.fromisoformat(contract.get("endDate", "").replace("Z", "+00:00") if "T" in contract.get("endDate", "") else contract.get("endDate", ""))
+        
+        # Check if contract overlaps with this month
+        month_start = datetime(year, month_num, 1)
+        if month_num == 12:
+            month_end = datetime(year + 1, 1, 1) - timedelta(days=1)
+        else:
+            month_end = datetime(year, month_num + 1, 1) - timedelta(days=1)
+        
+        # If contract doesn't overlap with month, skip
+        if end < month_start or start > month_end:
+            continue
+        
+        # Calculate days stayed in this month
+        days_start = max(start.date(), month_start.date())
+        days_end = min(end.date(), month_end.date())
+        days_stayed = (days_end - days_start).days + 1  # +1 to include the end day
+        days_stayed = max(1, min(days_stayed, 31))  # Clamp to 1-31
+        
+        active_contracts.append({
+            "contract": contract,
+            "daysStayed": days_stayed
+        })
+    
+    if not active_contracts:
+        return []
+    
+    # Calculate total days (for even distribution)
+    total_days = sum(c["daysStayed"] for c in active_contracts)
+    
+    # Delete old distributions for this bill
+    old_distributions = get_utility_distributions()
+    old_distributions = [d for d in old_distributions if d.get("utilityBillId") != bill_id]
+    
+    # Create new distributions
+    new_distributions = []
+    for entry in active_contracts:
+        contract = entry["contract"]
+        days = entry["daysStayed"]
+        
+        # Proportional allocation
+        electricity = (bill.get("electricityAmount", 0) * days) / total_days
+        water = (bill.get("waterAmount", 0) * days) / total_days
+        other_charges = (bill.get("otherCharges", 0) * days) / total_days
+        voucher = (bill.get("voucherAmount", 0) * days) / total_days
+        subsidy = (utility_subsidy * days) / 30  # subsidy is monthly, so divide by 30 then multiply by days
+        
+        # Total = electricity + water + other - voucher - subsidy
+        total = electricity + water + other_charges - voucher - subsidy
+        total = max(0, total)  # Can't be negative
+        
+        dist = {
+            "id": str(uuid.uuid4()),
+            "utilityBillId": bill_id,
+            "contractId": contract.get("id"),
+            "houseId": house_id,
+            "month": month,
+            "daysStayed": days,
+            "electricityAmount": round(electricity, 2),
+            "waterAmount": round(water, 2),
+            "subsidyAmount": round(subsidy, 2),
+            "otherCharges": round(other_charges, 2),
+            "voucherAmount": round(voucher, 2),
+            "totalAmount": round(total, 2),
+            "isPaid": False,
+            "createdAt": datetime.now().isoformat()
+        }
+        new_distributions.append(dist)
+        old_distributions.append(dist)
+    
+    write_data("utility_distributions", old_distributions)
+    return new_distributions
+
+def update_utility_distribution(dist_id: str, dist: UtilityDistribution) -> Optional[dict]:
+    """Update a utility distribution (manual editing)"""
+    distributions = get_utility_distributions()
+    for i, d in enumerate(distributions):
+        if d["id"] == dist_id:
+            updated = dist.dict(exclude_unset=True)
+            updated["id"] = dist_id
+            updated["updatedAt"] = datetime.now().isoformat()
+            distributions[i] = {**d, **updated}
+            write_data("utility_distributions", distributions)
+            return distributions[i]
+    return None
+
+def mark_utility_paid(dist_id: str, paid_date: Optional[str] = None) -> Optional[dict]:
+    """Mark a utility distribution as paid and sync to rent collections"""
+    dist = get_utility_distribution_by_id(dist_id)
+    if not dist:
+        return None
+    
+    # Update distribution
+    dist["isPaid"] = True
+    dist["paidDate"] = paid_date or datetime.now().isoformat()
+    dist["updatedAt"] = datetime.now().isoformat()
+    
+    distributions = get_utility_distributions()
+    for i, d in enumerate(distributions):
+        if d["id"] == dist_id:
+            distributions[i] = dist
+            break
+    write_data("utility_distributions", distributions)
+    
+    # Sync to rent collections - find or create entry
+    collections = get_rent_collections()
+    collection = None
+    for c in collections:
+        if c.get("contractId") == dist.get("contractId") and c.get("month") == dist.get("month"):
+            collection = c
+            break
+    
+    if not collection:
+        # Create new rent collection entry
+        collection = {
+            "id": str(uuid.uuid4()),
+            "contractId": dist.get("contractId"),
+            "month": dist.get("month"),
+            "rentAmount": 0,
+            "utilityAmount": dist.get("totalAmount", 0),
+            "otherAmount": 0,
+            "totalAmount": dist.get("totalAmount", 0),
+            "isCollected": False,
+            "createdAt": datetime.now().isoformat()
+        }
+        collections.append(collection)
+    else:
+        # Update existing entry
+        collection["utilityAmount"] = dist.get("totalAmount", 0)
+        collection["totalAmount"] = collection.get("rentAmount", 0) + dist.get("totalAmount", 0) + collection.get("otherAmount", 0)
+    
+    write_data("rent_collections", collections)
+    return dist
 
 # Initialize on module load
 initialize_data_files()

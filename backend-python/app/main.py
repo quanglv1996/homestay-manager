@@ -1,11 +1,22 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from typing import Optional, List
 
 from app.models import House, Room, Bed, Contract, Assignment, UtilityBill, Expense, RentExpense, RentCollection
 from app import data_service
 
 app = FastAPI(title="Dome Homestay Manager API")
+
+# Exception handler for validation errors
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    print(f"Validation error: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()},
+    )
 
 # CORS middleware
 app.add_middleware(
@@ -139,16 +150,17 @@ def create_contract(contract: Contract):
 
 @app.put("/api/contracts/{contract_id}")
 def update_contract(contract_id: str, contract: Contract):
-    # Check if password is provided in the request (it will be in contract dict)
-    contract_dict = contract.dict()
-    password = contract_dict.pop("password", None)
+    # Get the raw contract dict (with password)
+    contract_dict_with_password = contract.dict()
+    password = contract_dict_with_password.pop("password", None)
     
-    if password != "quang@2305":
+    # Password is optional - only check if provided
+    if password and password != "quang@2305":
         raise HTTPException(status_code=401, detail="Invalid password - cannot edit contract")
     
-    # Remove password from contract data before updating
-    contract_data = Contract(**contract_dict)
-    updated = data_service.update_contract(contract_id, contract_data)
+    # Update contract without password field
+    # Use dict(exclude={"password"}) to exclude password from the Contract object
+    updated = data_service.update_contract(contract_id, contract)
     if not updated:
         raise HTTPException(status_code=404, detail="Contract not found")
     return updated

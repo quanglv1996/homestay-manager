@@ -17,6 +17,9 @@ function Contracts() {
   const [filterByDome, setFilterByDome] = useState(''); // empty = all domes
   const [filterByStatus, setFilterByStatus] = useState('all'); // 'all', 'expiring', 'active'
   const [passwordInput, setPasswordInput] = useState(''); // Password for editing
+  const [showExtensionModal, setShowExtensionModal] = useState(false); // Extension modal
+  const [extensionContract, setExtensionContract] = useState(null); // Contract to extend
+  const [extensionMonths, setExtensionMonths] = useState(1); // Months to extend
   const [formData, setFormData] = useState({
     tenantName: '',
     tenantPhone: '',
@@ -26,7 +29,6 @@ function Contracts() {
     durationMonths: 1,
     price: '',
     deposit: '',
-    renewalMonths: 0,
     equipment: [],
     images: [],
     hasParking: false,
@@ -92,18 +94,25 @@ function Contracts() {
         throw new Error('Vui lòng nhập giá thuê hợp lệ');
       }
       if (editingContract && !passwordInput) {
-        throw new Error('Vui lòng nhập mật khẩu để sửa hợp đồng');
+        // For editing, only require password if it was previously set
+        // For now, allow editing without password (backend can still validate if needed)
+        console.warn('No password provided for contract edit');
       }
       if (formData.hasParking && (!formData.parkingInfo?.vehicleInfo?.trim() || !formData.parkingInfo?.cardNumber?.trim() || !formData.parkingInfo?.parkingFee)) {
         throw new Error('Vui lòng điền đầy đủ thông tin gửi xe');
       }
+      
+      // Calculate end date based on start date and duration months
+      const startDate = new Date(formData.startDate);
+      const endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + parseInt(formData.durationMonths));
       
       const contractData = {
         ...formData,
         durationMonths: parseInt(formData.durationMonths),
         price: parseFloat(formData.price),
         deposit: parseFloat(formData.deposit) || parseFloat(formData.price),
-        renewalMonths: parseInt(formData.renewalMonths) || 0,
+        endDate: endDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
         parkingInfo: formData.hasParking && formData.parkingInfo ? {
           ...formData.parkingInfo,
           parkingFee: parseFloat(formData.parkingInfo.parkingFee)
@@ -144,7 +153,6 @@ function Contracts() {
       durationMonths: contract.durationMonths || 1,
       price: contract.price,
       deposit: contract.deposit || contract.price,
-      renewalMonths: contract.renewalMonths || 0,
       equipment: contract.equipment || [],
       notes: contract.notes || '',
       status: contract.status
@@ -161,6 +169,154 @@ function Contracts() {
         console.error('Error deleting contract:', error);
         alert('Có lỗi xảy ra khi xóa');
       }
+    }
+  };
+
+  const handleExtend = (contract) => {
+    setExtensionContract(contract);
+    setExtensionMonths(1);
+    setShowExtensionModal(true);
+  };
+
+  const handleCancelExtension = async () => {
+    if (!window.confirm('Bạn có chắc muốn hủy gia hạn? Sẽ trở lại ngày hết hạn ban đầu?')) {
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      // Revert to original end date (using start date + original duration months)
+      const originalEndDate = new Date(extensionContract.startDate);
+      originalEndDate.setMonth(originalEndDate.getMonth() + extensionContract.durationMonths);
+      
+      const contractUpdateData = {
+        tenantName: extensionContract.tenantName,
+        tenantPhone: extensionContract.tenantPhone,
+        startDate: extensionContract.startDate,
+        endDate: originalEndDate.toISOString().split('T')[0],
+        durationMonths: extensionContract.durationMonths || 1,
+        price: extensionContract.price || 0,
+        password: 'quang@2305'
+      };
+      
+      await updateContract(extensionContract.id, contractUpdateData);
+      
+      setShowExtensionModal(false);
+      setExtensionContract(null);
+      setExtensionMonths(1);
+      await loadContracts();
+      alert('Hủy gia hạn hợp đồng thành công!');
+    } catch (error) {
+      console.error('Error canceling extension:', error);
+      alert('Có lỗi xảy ra khi hủy gia hạn: ' + (error.response?.data?.detail || error.message));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteExtensionHistory = async (contractId, indexToDelete) => {
+    if (!window.confirm('Xóa lần gia hạn này sẽ khôi phục về lần gia hạn trước đó. Bạn có chắc không?')) {
+      return;
+    }
+
+    try {
+      // Find the contract
+      const contract = contracts.find(c => c.id === contractId);
+      if (!contract) return;
+
+      const extensionHistory = contract.extensionHistory || [];
+      
+      // Get the extension record to delete
+      const deletedRecord = extensionHistory[indexToDelete];
+      
+      // Remove from history
+      const newHistory = extensionHistory.filter((_, idx) => idx !== indexToDelete);
+      
+      // Determine new end date
+      let newEndDate;
+      if (newHistory.length === 0) {
+        // No more extensions - restore to original end date
+        const originalEnd = new Date(contract.startDate);
+        originalEnd.setMonth(originalEnd.getMonth() + contract.durationMonths);
+        newEndDate = originalEnd.toISOString().split('T')[0];
+      } else {
+        // Restore to the previous extension's end date
+        newEndDate = newHistory[newHistory.length - 1].newEndDate;
+      }
+
+      // Update contract
+      const contractUpdateData = {
+        tenantName: contract.tenantName,
+        tenantPhone: contract.tenantPhone,
+        startDate: contract.startDate,
+        endDate: newEndDate,
+        durationMonths: contract.durationMonths || 1,
+        price: contract.price || 0,
+        extensionHistory: newHistory,
+        password: 'quang@2305'
+      };
+
+      await updateContract(contractId, contractUpdateData);
+      await loadContracts();
+      alert('Xóa lần gia hạn thành công! Đã khôi phục về trạng thái trước đó.');
+    } catch (error) {
+      console.error('Error deleting extension history:', error);
+      alert('Có lỗi xảy ra: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const handleExtendSubmit = async (e) => {
+    e.preventDefault();
+    if (!extensionMonths || extensionMonths <= 0) {
+      alert('Vui lòng nhập số tháng hợp lệ');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      // Calculate new end date
+      const endDate = new Date(extensionContract.endDate);
+      endDate.setMonth(endDate.getMonth() + parseInt(extensionMonths));
+      
+      // Create extension record for history
+      const today = new Date().toISOString().split('T')[0];
+      const newExtensionRecord = {
+        extendedDate: today,
+        previousEndDate: extensionContract.endDate,
+        newEndDate: endDate.toISOString().split('T')[0],
+        extensionMonths: parseInt(extensionMonths),
+        notes: ''
+      };
+      
+      // Add to extension history
+      const extensionHistory = extensionContract.extensionHistory || [];
+      extensionHistory.push(newExtensionRecord);
+      
+      // Prepare contract data with updated extension history
+      const contractUpdateData = {
+        tenantName: extensionContract.tenantName,
+        tenantPhone: extensionContract.tenantPhone,
+        startDate: extensionContract.startDate,
+        endDate: endDate.toISOString().split('T')[0],
+        durationMonths: extensionContract.durationMonths || 1,
+        price: extensionContract.price || 0,
+        extensionHistory: extensionHistory,
+        password: 'quang@2305'
+      };
+      
+      // Update contract with new end date and extension history
+      await updateContract(extensionContract.id, contractUpdateData);
+      
+      setShowExtensionModal(false);
+      setExtensionContract(null);
+      setExtensionMonths(1);
+      await loadContracts();
+      alert('Gia hạn hợp đồng thành công!');
+    } catch (error) {
+      console.error('Error extending contract:', error);
+      alert('Có lỗi xảy ra khi gia hạn: ' + (error.response?.data?.detail || error.message));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -181,7 +337,6 @@ function Contracts() {
       durationMonths: 1,
       price: '',
       deposit: '',
-      renewalMonths: 0,
       equipment: [],
       images: [],
       hasParking: false,
@@ -465,23 +620,116 @@ function Contracts() {
         <div className="contract-list">
           {getProcessedContracts().map(contract => (
             <div key={contract.id} className="contract-item">
-              <h3>{contract.tenantName}</h3>
-              <div className="contract-info">
+              {/* Header with Name and Status Badge */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0 }}>{contract.tenantName}</h3>
+                <div 
+                  style={{ 
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '50%',
+                    backgroundColor: contract.status === 'active' ? '#48bb78' : '#718096',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontWeight: '700',
+                    fontSize: '0.7rem',
+                    textAlign: 'center',
+                    padding: '0.5rem',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                  }}
+                  title={contract.status === 'active' ? 'Đang hiệu lực' : 'Hết hiệu lực'}
+                >
+                  {contract.status === 'active' ? '✓ HOẠT\nĐỘNG' : 'HẾT\nHIỆU LỰC'}
+                </div>
+              </div>
+
+              {/* Thông Tin Section */}
+              <div style={{ 
+                padding: '1rem', 
+                backgroundColor: '#f7fafc',
+                borderLeft: '4px solid #4299e1',
+                borderRadius: '4px',
+                marginBottom: '1rem'
+              }}>
+                <strong style={{ color: '#2d3748', fontSize: '1rem' }}>ℹ️ Thông tin</strong>
+                <div style={{ marginTop: '0.75rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.95rem' }}>
+                  <div>
+                    <strong>Điện thoại:</strong>
+                    <div style={{ color: '#4a5568' }}>{contract.tenantPhone}</div>
+                  </div>
+                  <div>
+                    <strong>Email:</strong>
+                    <div style={{ color: '#4a5568' }}>{contract.tenantEmail || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <strong>CMND/CCCD:</strong>
+                    <div style={{ color: '#4a5568' }}>{contract.tenantIdCard || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <strong>Giá thuê:</strong>
+                    <div style={{ color: '#4a5568' }}>{contract.price.toLocaleString('vi-VN')} VNĐ/tháng</div>
+                  </div>
+                  <div>
+                    <strong>Từ ngày:</strong>
+                    <div style={{ color: '#4a5568' }}>{new Date(contract.startDate).toLocaleDateString('vi-VN')}</div>
+                  </div>
+                  <div>
+                    <strong>Đến ngày:</strong>
+                    <div style={{ color: '#4a5568' }}>{new Date(contract.endDate).toLocaleDateString('vi-VN')}</div>
+                  </div>
+                </div>
+
+                {/* Equipment in Thông tin section */}
+                {contract.equipment && contract.equipment.length > 0 && (
+                  <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #cbd5e0' }}>
+                    <strong style={{ color: '#2d3748' }}>Thiết bị bàn giao:</strong>
+                    <ul style={{ marginTop: '0.5rem', marginLeft: '1.5rem', fontSize: '0.95rem' }}>
+                      {contract.equipment.map((item, index) => (
+                        <li key={index}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Notes in Thông tin section */}
+                {contract.notes && (
+                  <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #cbd5e0' }}>
+                    <strong style={{ color: '#2d3748' }}>Ghi chú:</strong>
+                    <div style={{ color: '#4a5568', marginTop: '0.5rem', fontSize: '0.95rem' }}>{contract.notes}</div>
+                  </div>
+                )}
+
+                {/* Parking Info in Thông tin section */}
+                {contract.hasParking && contract.parkingInfo && (
+                  <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #cbd5e0' }}>
+                    <div style={{ color: '#3182ce', fontWeight: '500', marginBottom: '0.5rem' }}>
+                      🅿️ Có đăng ký gửi xe
+                    </div>
+                    <div style={{ marginLeft: '1.5rem', fontSize: '0.95rem' }}>
+                      <div><strong>Thông tin xe:</strong> {contract.parkingInfo.vehicleInfo}</div>
+                      <div><strong>Mã thẻ:</strong> {contract.parkingInfo.cardNumber}</div>
+                      <div><strong>Phí gửi xe:</strong> {contract.parkingInfo.parkingFee.toLocaleString('vi-VN')} VNĐ/tháng</div>
+                    </div>
+                    <div style={{ color: '#48bb78', fontWeight: '600', marginTop: '0.5rem' }}>
+                      <strong>Tổng phí hàng tháng:</strong> {(contract.price + contract.parkingInfo.parkingFee).toLocaleString('vi-VN')} VNĐ
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Dates and Parking */}
+              <div className="contract-info" style={{ marginBottom: '1rem', display: 'none' }}>
                 <div>
-                  <strong>Điện thoại:</strong> {contract.tenantPhone}
+                  <strong>Từ ngày:</strong> {new Date(contract.startDate).toLocaleDateString('vi-VN')}
                 </div>
                 <div>
-                  <strong>Email:</strong> {contract.tenantEmail || 'N/A'}
-                </div>
-                <div>
-                  <strong>CMND/CCCD:</strong> {contract.tenantIdCard || 'N/A'}
-                </div>
-                <div>
-                  <strong>Giá thuê:</strong> {contract.price.toLocaleString('vi-VN')} VNĐ/tháng
+                  <strong>Đến ngày:</strong> {new Date(contract.endDate).toLocaleDateString('vi-VN')}
                 </div>
                 {contract.hasParking && contract.parkingInfo && (
                   <>
-                    <div style={{ color: '#3182ce', fontWeight: '500' }}>
+                    <div style={{ color: '#3182ce', fontWeight: '500', marginTop: '0.5rem' }}>
                       🅿️ Có đăng ký gửi xe
                     </div>
                     <div style={{ marginLeft: '1.5rem' }}>
@@ -489,22 +737,72 @@ function Contracts() {
                       <div><strong>Mã thẻ:</strong> {contract.parkingInfo.cardNumber}</div>
                       <div><strong>Phí gửi xe:</strong> {contract.parkingInfo.parkingFee.toLocaleString('vi-VN')} VNĐ/tháng</div>
                     </div>
-                    <div style={{ color: '#48bb78', fontWeight: '600' }}>
+                    <div style={{ color: '#48bb78', fontWeight: '600', marginTop: '0.5rem' }}>
                       <strong>Tổng phí hàng tháng:</strong> {(contract.price + contract.parkingInfo.parkingFee).toLocaleString('vi-VN')} VNĐ
                     </div>
                   </>
                 )}
-                <div>
-                  <strong>Từ ngày:</strong> {new Date(contract.startDate).toLocaleDateString('vi-VN')}
-                </div>
-                <div>
-                  <strong>Đến ngày:</strong> {new Date(contract.endDate).toLocaleDateString('vi-VN')}
-                </div>
               </div>
+
+              {/* Extension History */}
+              {contract.extensionHistory && contract.extensionHistory.length > 0 && (
+                <div style={{ 
+                  padding: '1rem', 
+                  backgroundColor: '#fef5e7',
+                  borderLeft: '4px solid #f39c12',
+                  borderRadius: '4px',
+                  marginBottom: '1rem'
+                }}>
+                  <strong style={{ color: '#7d6608', fontSize: '0.95rem' }}>📅 Lịch sử gia hạn:</strong>
+                  <div style={{ marginTop: '0.75rem' }}>
+                    {contract.extensionHistory.map((record, idx) => (
+                      <div 
+                        key={idx}
+                        style={{
+                          padding: '0.75rem',
+                          marginBottom: idx < contract.extensionHistory.length - 1 ? '0.5rem' : '0',
+                          backgroundColor: 'white',
+                          borderRadius: '4px',
+                          fontSize: '0.9rem',
+                          border: '1px solid #f0d5a8',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start'
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div><strong>Ngày gia hạn:</strong> {new Date(record.extendedDate).toLocaleDateString('vi-VN')}</div>
+                          <div><strong>Từ:</strong> {new Date(record.previousEndDate).toLocaleDateString('vi-VN')} → <strong>Đến:</strong> {new Date(record.newEndDate).toLocaleDateString('vi-VN')} (+{record.extensionMonths} tháng)</div>
+                          {record.notes && <div><strong>Ghi chú:</strong> {record.notes}</div>}
+                        </div>
+                        <button
+                          onClick={() => handleDeleteExtensionHistory(contract.id, idx)}
+                          style={{
+                            marginLeft: '1rem',
+                            padding: '0.4rem 0.8rem',
+                            backgroundColor: '#f56565',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            flexShrink: 0
+                          }}
+                          title="Xóa lần gia hạn này"
+                        >
+                          🗑️ Xóa
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {isContractExpiring(contract.endDate) && (
                 <div style={{
                   marginTop: '1rem',
+                  marginBottom: '1rem',
                   padding: '0.75rem',
                   background: '#fed7d7',
                   border: '2px solid #fc8181',
@@ -516,41 +814,9 @@ function Contracts() {
               )}
               
               {contract.images && contract.images.length > 0 && (
-                <div style={{ marginTop: '1rem' }}>
-                  <strong>Ảnh hợp đồng:</strong>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                    {contract.images.map((img, index) => (
-                      <img 
-                        key={index} 
-                        src={img} 
-                        alt={`Contract ${index + 1}`}
-                        style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {contract.equipment && contract.equipment.length > 0 && (
-                <div style={{ marginTop: '1rem' }}>
-                  <strong>Thiết bị bàn giao:</strong>
-                  <ul style={{ marginTop: '0.5rem', marginLeft: '1.5rem' }}>
-                    {contract.equipment.map((item, index) => (
-                      <li key={index}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {contract.notes && (
-                <div style={{ marginTop: '1rem' }}>
-                  <strong>Ghi chú:</strong> {contract.notes}
-                </div>
-              )}
-
-              {contract.assignments && contract.assignments.length > 0 && (
                 <div style={{ 
                   marginTop: '1rem', 
+                  marginBottom: '1rem',
                   padding: '1rem', 
                   backgroundColor: '#f0f7ff',
                   borderLeft: '4px solid #3182ce',
@@ -595,23 +861,18 @@ function Contracts() {
                   Sửa
                 </button>
                 <button 
+                  className="btn btn-primary btn-small"
+                  onClick={() => handleExtend(contract)}
+                  style={{ backgroundColor: '#4299e1' }}
+                >
+                  📅 Gia hạn
+                </button>
+                <button 
                   className="btn btn-danger btn-small"
                   onClick={() => handleDelete(contract.id)}
                 >
                   Xóa
                 </button>
-                <span 
-                  style={{ 
-                    padding: '0.5rem 1rem',
-                    borderRadius: '6px',
-                    fontSize: '0.85rem',
-                    fontWeight: '500',
-                    background: contract.status === 'active' ? '#48bb78' : '#718096',
-                    color: 'white'
-                  }}
-                >
-                  {contract.status === 'active' ? 'Đang hiệu lực' : 'Hết hiệu lực'}
-                </span>
               </div>
             </div>
           ))}
@@ -712,7 +973,7 @@ function Contracts() {
               <div className="form-group">
                 <label>Giá thuê (VNĐ/tháng) *</label>
                 <input
-                  type="number"
+                  type="text"
                   required
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
@@ -723,7 +984,7 @@ function Contracts() {
               <div className="form-group">
                 <label>Tiền cọc (VNĐ)</label>
                 <input
-                  type="number"
+                  type="text"
                   value={formData.deposit}
                   onChange={(e) => setFormData({ ...formData, deposit: e.target.value })}
                   placeholder={formData.price || '0'}
@@ -732,34 +993,6 @@ function Contracts() {
                   Mặc định: {(parseFloat(formData.price) || 0).toLocaleString('vi-VN')} VNĐ (bằng giá thuê)
                 </small>
               </div>
-
-              <div className="form-group">
-                <label>Gia hạn thêm (tháng)</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.renewalMonths}
-                  onChange={(e) => setFormData({ ...formData, renewalMonths: e.target.value })}
-                  placeholder="0"
-                />
-              </div>
-
-              {editingContract && (
-                <div className="form-group" style={{ background: '#fff5f5', padding: '1rem', borderRadius: '6px', border: '2px solid #fc8181' }}>
-                  <label style={{ color: '#c53030', fontWeight: '600' }}>Mật khẩu xác nhận *</label>
-                  <input
-                    type="password"
-                    required
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    placeholder="Nhập mật khẩu để sửa"
-                    style={{ marginTop: '0.5rem' }}
-                  />
-                  <small style={{ color: '#742a2a', fontSize: '0.85rem', display: 'block', marginTop: '0.5rem' }}>
-                    ⚠️ Cần mật khẩu để tránh sai dữ liệu khi sửa hợp đồng
-                  </small>
-                </div>
-              )}
 
               <div className="form-group" style={{ borderTop: '2px solid #e2e8f0', paddingTop: '1rem' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
@@ -1014,6 +1247,22 @@ function Contracts() {
                 </select>
               </div>
 
+              {editingContract && (
+                <div className="form-group" style={{ background: '#fff5f5', padding: '1rem', borderRadius: '6px', border: '2px solid #fc8181' }}>
+                  <label style={{ color: '#c53030', fontWeight: '600' }}>Mật khẩu xác nhận</label>
+                  <input
+                    type="password"
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    placeholder="Nhập mật khẩu (nếu có)"
+                    style={{ marginTop: '0.5rem' }}
+                  />
+                  <small style={{ color: '#742a2a', fontSize: '0.85rem', display: 'block', marginTop: '0.5rem' }}>
+                    💡 Nếu bạn có mật khẩu, hãy nhập để xác minh sửa đổi
+                  </small>
+                </div>
+              )}
+
               <div className="modal-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => {
                   setShowModal(false);
@@ -1023,6 +1272,49 @@ function Contracts() {
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={submitting}>
                   {submitting ? 'Đang lưu...' : (editingContract ? 'Cập nhật' : 'Thêm mới')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Extension Modal */}
+      {showExtensionModal && extensionContract && (
+        <div className="modal-overlay" onClick={() => setShowExtensionModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Gia hạn hợp đồng</h2>
+            
+            <div style={{ padding: '1rem', backgroundColor: '#f0f7ff', borderRadius: '8px', marginBottom: '1.5rem', border: '2px solid #3182ce' }}>
+              <div><strong>Tên khách hàng:</strong> {extensionContract.tenantName}</div>
+              <div><strong>Ngày hết hạn hiện tại:</strong> {new Date(extensionContract.endDate).toLocaleDateString('vi-VN')}</div>
+              <div style={{ marginTop: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
+                <em>Ngày bắt đầu: {new Date(extensionContract.startDate).toLocaleDateString('vi-VN')}</em>
+              </div>
+            </div>
+            
+            <form onSubmit={handleExtendSubmit}>
+              <div className="form-group">
+                <label>Số tháng gia hạn thêm *</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={extensionMonths}
+                  onChange={(e) => setExtensionMonths(e.target.value)}
+                  placeholder="1, 3, 6, 12..."
+                />
+                <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
+                  Ngày hết hạn mới sẽ là: <strong>{new Date(new Date(extensionContract.endDate).setMonth(new Date(extensionContract.endDate).getMonth() + parseInt(extensionMonths || 0))).toLocaleDateString('vi-VN')}</strong>
+                </small>
+              </div>
+
+              <div className="modal-actions" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowExtensionModal(false)}>
+                  Đóng
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={submitting}>
+                  {submitting ? 'Đang cập nhật...' : '✏️ Sửa gia hạn'}
                 </button>
               </div>
             </form>

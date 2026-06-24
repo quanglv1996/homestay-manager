@@ -48,7 +48,7 @@
     "tenantEmail": "no_email@gmail.com",
     "tenantIdCard": "1",
     "startDate": "2026-06-24",
-    "endDate": "2026-06-26",
+    "endDate": "2026-12-24",
     "price": 1500000.0,
     "equipment": [
       "Chăn",
@@ -61,10 +61,21 @@
     "images": [],
     "hasParking": false,
     "parkingInfo": null,
-    "notes": "",
+    "notes": "Test edit 1782272624644",
     "status": "active",
     "createdAt": "2026-06-24T01:59:25.389916",
-    "updatedAt": null
+    "updatedAt": "2026-06-24T04:06:43.728842",
+    "durationMonths": 1,
+    "deposit": 1500000.0,
+    "extensionHistory": [
+      {
+        "extendedDate": "2026-06-24",
+        "previousEndDate": "2026-11-24",
+        "newEndDate": "2026-12-24",
+        "extensionMonths": 1,
+        "notes": ""
+      }
+    ]
   },
   {
     "id": "0fff2f85-433d-45c2-b061-ad6e88b86bb6",
@@ -73,7 +84,7 @@
     "tenantEmail": "no_email@gmail.com",
     "tenantIdCard": "1",
     "startDate": "2026-06-02",
-    "endDate": "2026-06-11",
+    "endDate": "2026-08-11",
     "price": 1499996.0,
     "equipment": [
       "Chăn",
@@ -89,7 +100,24 @@
     "notes": "",
     "status": "active",
     "createdAt": "2026-06-24T02:00:12.384340",
-    "updatedAt": null
+    "updatedAt": "2026-06-24T04:28:57.055024",
+    "durationMonths": 1,
+    "extensionHistory": [
+      {
+        "extendedDate": "2026-06-24",
+        "previousEndDate": "2026-06-11",
+        "newEndDate": "2026-07-11",
+        "extensionMonths": 1,
+        "notes": ""
+      },
+      {
+        "extendedDate": "2026-06-24",
+        "previousEndDate": "2026-07-11",
+        "newEndDate": "2026-08-11",
+        "extensionMonths": 1,
+        "notes": ""
+      }
+    ]
   },
   {
     "id": "4399db9f-7ece-4938-9d6c-0ad14bdaf7aa",

@@ -2,6 +2,14 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 
+class ExtensionRecord(BaseModel):
+    """Log của mỗi lần gia hạn hợp đồng"""
+    extendedDate: str  # Ngày thực hiện gia hạn (format: YYYY-MM-DD)
+    previousEndDate: str  # Ngày kết thúc trước khi gia hạn
+    newEndDate: str  # Ngày kết thúc sau gia hạn
+    extensionMonths: int  # Số tháng gia hạn
+    notes: Optional[str] = ""  # Ghi chú gia hạn
+
 class House(BaseModel):
     id: Optional[str] = None
     name: str
@@ -48,8 +56,13 @@ class Contract(BaseModel):
     parkingInfo: Optional[ParkingInfo] = None  # Thông tin gửi xe
     notes: Optional[str] = ""
     status: Optional[str] = "active"
+    extensionHistory: Optional[List[ExtensionRecord]] = []  # Lịch sử gia hạn
+    password: Optional[str] = None  # For API validation (not stored)
     createdAt: Optional[str] = None
     updatedAt: Optional[str] = None
+    
+    class Config:
+        extra = "allow"  # Allow extra fields like password
     
     def total_monthly_fee(self) -> float:
         """Tổng phí hàng tháng = giá thuê + phí gửi xe (nếu có)"""
@@ -77,14 +90,27 @@ class UtilityBill(BaseModel):
     createdAt: Optional[str] = None
     updatedAt: Optional[str] = None
 
+class UtilityDistribution(BaseModel):
+    """Phân bổ hóa đơn điện nước cho các hợp đồng"""
+    id: Optional[str] = None
+    billId: str  # ID hóa đơn điện nước
+    contractId: str  # Hợp đồng nào
+    houseId: str  # Dome nào
+    month: str  # Tháng (YYYY-MM)
+    amount: float  # Số tiền phân bổ cho hợp đồng này
+    isPaid: Optional[bool] = False  # Đã thanh toán hay chưa
+    paidDate: Optional[str] = None  # Ngày thanh toán
+    notes: Optional[str] = ""
+    createdAt: Optional[str] = None
+    updatedAt: Optional[str] = None
+
 class Expense(BaseModel):
     """Khoản chi"""
     id: Optional[str] = None
     description: str  # Mô tả khoản chi
     amount: float  # Số tiền
     date: str  # Ngày chi
-    type: Optional[str] = "khac"  # Loại chi: "thuenha" hoặc "khac"
-    category: Optional[str] = ""  # Loại chi chi tiết (sửa chữa, mua sắm, ...)
+    category: Optional[str] = ""  # Loại chi chi tiết (sửa chữa, mua sắm, thuê nhà, ...)
     houseId: Optional[str] = None  # Dome nào (None = "Khác" - dùng chung)
     notes: Optional[str] = ""
     createdAt: Optional[str] = None
