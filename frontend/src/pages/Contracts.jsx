@@ -756,7 +756,7 @@ function Contracts() {
                   borderRadius: '4px',
                   marginBottom: '1rem'
                 }}>
-                  <strong style={{ color: '#7d6608', fontSize: '0.95rem' }}>📅 Lịch sử gia hạn:</strong>
+                  <strong style={{ color: '#7d6608', fontSize: '0.95rem' }}>� Lịch sử gia hạn:</strong>
                   <div style={{ marginTop: '0.75rem' }}>
                     {contract.extensionHistory.map((record, idx) => (
                       <div 
@@ -825,7 +825,7 @@ function Contracts() {
                   borderLeft: '4px solid #3182ce',
                   borderRadius: '4px'
                 }}>
-                  <strong style={{ color: '#3182ce' }}>📍 Vị trí gán:</strong>
+                  <strong style={{ color: '#3182ce' }}>� Vị trí gán:</strong>
                   <div style={{ marginTop: '0.5rem' }}>
                     {contract.assignments.map((assignment, index) => (
                       <div 

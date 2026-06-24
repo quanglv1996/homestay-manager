@@ -128,5 +128,105 @@
     "notes": "",
     "createdAt": "2026-06-24T04:49:31.722426",
     "updatedAt": null
+  },
+  {
+    "id": "05de6389-8280-46b4-839d-55fbf9abf47f",
+    "contractId": "68f266a1-582d-4122-a7f0-2ee0d4b42234",
+    "month": "2025-12",
+    "isCollected": true,
+    "collectionDate": "2026-06-24",
+    "notes": "",
+    "createdAt": "2026-06-24T10:12:29.459909",
+    "updatedAt": null
+  },
+  {
+    "id": "7eb175e0-1fe6-4c8f-8848-f6a292626fda",
+    "contractId": "68f266a1-582d-4122-a7f0-2ee0d4b42234",
+    "month": "2026-01",
+    "isCollected": true,
+    "collectionDate": "2026-06-24",
+    "notes": "",
+    "createdAt": "2026-06-24T10:12:30.744877",
+    "updatedAt": null
+  },
+  {
+    "id": "f118f564-599e-4308-aab8-6de51276ae54",
+    "contractId": "68f266a1-582d-4122-a7f0-2ee0d4b42234",
+    "month": "2026-02",
+    "isCollected": true,
+    "collectionDate": "2026-06-24",
+    "notes": "",
+    "createdAt": "2026-06-24T10:12:31.860754",
+    "updatedAt": null
+  },
+  {
+    "id": "6f216a21-9245-4bd0-a09a-9b5fd6ec3096",
+    "contractId": "68f266a1-582d-4122-a7f0-2ee0d4b42234",
+    "month": "2026-03",
+    "isCollected": true,
+    "collectionDate": "2026-06-24",
+    "notes": "",
+    "createdAt": "2026-06-24T10:12:33.129259",
+    "updatedAt": null
+  },
+  {
+    "id": "a61e90c8-0d7a-43f9-9c28-b37b5fe68ce3",
+    "contractId": "68f266a1-582d-4122-a7f0-2ee0d4b42234",
+    "month": "2026-04",
+    "isCollected": true,
+    "collectionDate": "2026-06-24",
+    "notes": "",
+    "createdAt": "2026-06-24T10:12:34.066695",
+    "updatedAt": null
+  },
+  {
+    "id": "8b83040c-c9bf-4f0c-b0a9-e746f7d9a959",
+    "contractId": "68f266a1-582d-4122-a7f0-2ee0d4b42234",
+    "month": "2026-05",
+    "isCollected": true,
+    "collectionDate": "2026-06-24",
+    "notes": "",
+    "createdAt": "2026-06-24T10:12:35.053982",
+    "updatedAt": null
+  },
+  {
+    "id": "e0bf8fd9-80ad-4e0e-b60c-5f4b7284e86c",
+    "contractId": "3f96b821-ba59-45e8-a39b-eb2da5703054",
+    "month": "2026-02",
+    "isCollected": true,
+    "collectionDate": "2026-06-24",
+    "notes": "",
+    "createdAt": "2026-06-24T10:12:43.675855",
+    "updatedAt": null
+  },
+  {
+    "id": "bb313b4f-ba27-461f-ad1c-2ee07f2fd2c4",
+    "contractId": "3f96b821-ba59-45e8-a39b-eb2da5703054",
+    "month": "2026-03",
+    "isCollected": true,
+    "collectionDate": "2026-06-24",
+    "notes": "",
+    "createdAt": "2026-06-24T10:12:44.796865",
+    "updatedAt": null
+  },
+  {
+    "id": "5f8b9b57-0ed0-4f41-9808-07c00d1d7397",
+    "contractId": "3f96b821-ba59-45e8-a39b-eb2da5703054",
+    "month": "2026-04",
+    "isCollected": true,
+    "collectionDate": "2026-06-24",
+    "notes": "",
+    "createdAt": "2026-06-24T10:12:45.747850",
+    "updatedAt": null
+  },
+  {
+    "id": "66d13683-4caa-4123-a5d1-ac77fb17b967",
+    "contractId": "3f96b821-ba59-45e8-a39b-eb2da5703054",
+    "month": "2026-05",
+    "isCollected": true,
+    "collectionDate": "2026-06-24",
+    "notes": "",
+    "createdAt": "2026-06-24T10:12:46.541124",
+    "updatedAt": null
   }
 ]

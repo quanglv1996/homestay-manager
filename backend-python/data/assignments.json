@@ -40,5 +40,12 @@
     "contractId": "4399db9f-7ece-4938-9d6c-0ad14bdaf7aa",
     "level": "top",
     "createdAt": "2026-06-24T08:46:01.855379"
+  },
+  {
+    "id": "29c02472-cd54-400a-a65f-25486954f037",
+    "bedId": "54f2f4b0-18f7-402b-ad74-6ae071c4cdfa",
+    "contractId": "3f96b821-ba59-45e8-a39b-eb2da5703054",
+    "level": "top",
+    "createdAt": "2026-06-24T10:11:52.534905"
   }
 ]
